@@ -95,7 +95,7 @@
     "playwright": "1.65.1",
     "tsx": "4.23.15",
     "typescript": "5.9.3",
-    "vite": "7.3.8"
+    "vite": "8.3.8"
   },
   "blocksTemplateVersion": "0.1.0",
   "description": "A 3D builder for AWS CDK Blocks, as a deployed sample app (Agent, Realtime, KVStore, CronJob, Logger, Metrics, Dashboard, Secret, the custom Block HouseBucket, and the Hosting construct)",
