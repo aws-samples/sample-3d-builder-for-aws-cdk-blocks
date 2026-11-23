@@ -94,7 +94,7 @@
     "knip": "6.46.1",
     "playwright": "1.65.1",
     "tsx": "4.23.15",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
     "vite": "8.3.8"
   },
   "blocksTemplateVersion": "0.1.0",
