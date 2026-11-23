@@ -1,0 +1,642 @@
+{
+  "readAt": "2026-11-21",
+  "repoCommit": "92cf8fb",
+  "umbrella": {
+    "name": "aws-cdk-blocks",
+    "version": "1.0.0"
+  },
+  "caseNote": "Each block alone on the \"backend\" template of create-blocks-app 1.0.0 with default options and the production preset (BlocksPresets.production, what npm run deploy synthesizes), counted as resources added to a no-blocks baseline.",
+  "blocks": [
+    {
+      "id": "kvstore",
+      "label": "KVStore",
+      "package": "@aws-cdk-blocks/bb-kv-store",
+      "version": "1.0.0",
+      "tagline": "Simple key-value storage for small lookups",
+      "codeFile": "cdk-blocks/index.ts",
+      "importName": "KVStore",
+      "importFrom": "aws-cdk-blocks",
+      "code": [
+        "const todos = new KVStore(scope, 'todos');"
+      ],
+      "resources": [
+        {
+          "type": "AWS::DynamoDB::Table",
+          "service": "DynamoDB",
+          "name": "Table",
+          "count": 1,
+          "note": "On-demand, one string key"
+        }
+      ],
+      "supporting": [],
+      "supportingCount": 0,
+      "note": "The count is 1 under both presets; production also retains the table and turns on point-in-time recovery and deletion protection.",
+      "extraImports": []
+    },
+    {
+      "id": "database",
+      "label": "Database",
+      "package": "@aws-cdk-blocks/bb-database",
+      "version": "1.0.0",
+      "tagline": "A PostgreSQL-compatible database you query with SQL",
+      "codeFile": "cdk-blocks/index.ts",
+      "importName": "Database",
+      "importFrom": "aws-cdk-blocks",
+      "code": [
+        "const db = new Database(scope, 'main');"
+      ],
+      "resources": [
+        {
+          "type": "AWS::DSQL::Cluster",
+          "service": "Aurora DSQL",
+          "name": "Cluster",
+          "count": 1,
+          "note": "Serverless, PostgreSQL-compatible"
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "service": "Lambda",
+          "name": "Function",
+          "count": 5,
+          "note": "Run schema migrations at deploy"
+        },
+        {
+          "type": "AWS::StepFunctions::StateMachine",
+          "service": "Step Functions",
+          "name": "State machine",
+          "count": 1,
+          "note": "Waits for a migration to finish"
+        },
+        {
+          "type": "AWS::CloudFormation::CustomResource",
+          "service": "CloudFormation",
+          "name": "Custom resource",
+          "count": 1,
+          "note": "Starts the migrations"
+        }
+      ],
+      "supporting": [
+        {
+          "type": "AWS::IAM::Policy",
+          "count": 6
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "count": 6
+        },
+        {
+          "type": "AWS::Logs::LogGroup",
+          "count": 1
+        }
+      ],
+      "supportingCount": 13,
+      "note": "Synthesized with no options: an Amazon Aurora DSQL cluster, and 20 resources that run schema migrations at deploy. Both presets give 21, and production also retains the cluster and turns on deletion protection.",
+      "extraImports": []
+    },
+    {
+      "id": "auth",
+      "label": "Auth",
+      "package": "@aws-cdk-blocks/bb-auth",
+      "version": "1.0.0",
+      "tagline": "Sign-up and sign-in backed by Amazon Cognito",
+      "codeFile": "cdk-blocks/index.ts",
+      "importName": "Auth",
+      "importFrom": "aws-cdk-blocks",
+      "code": [
+        "const auth = new Auth(scope, 'auth');"
+      ],
+      "resources": [
+        {
+          "type": "AWS::Cognito::UserPool",
+          "service": "Cognito",
+          "name": "User pool",
+          "count": 1,
+          "note": "Essentials tier, MFA off"
+        },
+        {
+          "type": "AWS::Cognito::UserPoolClient",
+          "service": "Cognito",
+          "name": "User pool client",
+          "count": 1
+        },
+        {
+          "type": "AWS::DynamoDB::Table",
+          "service": "DynamoDB",
+          "name": "Table",
+          "count": 1,
+          "note": "Sessions"
+        },
+        {
+          "type": "AWS::SecretsManager::Secret",
+          "service": "Secrets Manager",
+          "name": "Secret",
+          "count": 1,
+          "note": "Signs sessions"
+        }
+      ],
+      "supporting": [
+        {
+          "type": "AWS::IAM::Policy",
+          "count": 2
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "count": 2
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "count": 2
+        },
+        {
+          "type": "AWS::Logs::LogGroup",
+          "count": 2
+        },
+        {
+          "type": "Custom::BlocksAuthPoolGuard",
+          "count": 1
+        }
+      ],
+      "supportingCount": 9,
+      "note": "Auth with default options: email and password sign-in on an Amazon Cognito user pool. Of its 13 resources, 9 are the deploy-time guard for the user pool. The sandbox preset gives 21.",
+      "extraImports": []
+    },
+    {
+      "id": "agent",
+      "label": "Agent",
+      "package": "@aws-cdk-blocks/bb-agent",
+      "version": "1.0.0",
+      "tagline": "A streaming AI agent with tools and chat history",
+      "codeFile": "cdk-blocks/index.ts",
+      "importName": "Agent",
+      "importFrom": "aws-cdk-blocks",
+      "code": [
+        "const helper = new Agent(scope, 'helper', {",
+        "  systemPrompt: 'You are a helpful assistant.',",
+        "});"
+      ],
+      "resources": [
+        {
+          "type": "AWS::BedrockAgentCore::Runtime",
+          "service": "Bedrock AgentCore",
+          "name": "Runtime",
+          "count": 1,
+          "note": "Runs the agent loop"
+        },
+        {
+          "type": "AWS::DynamoDB::Table",
+          "service": "DynamoDB",
+          "name": "Table",
+          "count": 3,
+          "note": "Conversations, messages, connections"
+        },
+        {
+          "type": "AWS::S3::Bucket",
+          "service": "S3",
+          "name": "Bucket",
+          "count": 1,
+          "note": "Session snapshots"
+        },
+        {
+          "type": "AWS::ApiGatewayV2::Api",
+          "service": "API Gateway",
+          "name": "WebSocket API",
+          "count": 1,
+          "note": "Streams replies to the browser"
+        },
+        {
+          "type": "AWS::SecretsManager::Secret",
+          "service": "Secrets Manager",
+          "name": "Secret",
+          "count": 1,
+          "note": "Signs channel tokens"
+        }
+      ],
+      "supporting": [
+        {
+          "type": "AWS::IAM::Policy",
+          "count": 6
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "count": 6
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "count": 5
+        },
+        {
+          "type": "AWS::ApiGatewayV2::Integration",
+          "count": 3
+        },
+        {
+          "type": "AWS::ApiGatewayV2::Route",
+          "count": 3
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "count": 3
+        },
+        {
+          "type": "AWS::Logs::LogGroup",
+          "count": 2
+        },
+        {
+          "type": "AWS::ApiGatewayV2::Stage",
+          "count": 1
+        },
+        {
+          "type": "AWS::CloudFormation::CustomResource",
+          "count": 1
+        },
+        {
+          "type": "AWS::S3::BucketPolicy",
+          "count": 1
+        },
+        {
+          "type": "AWS::StepFunctions::StateMachine",
+          "count": 1
+        }
+      ],
+      "supportingCount": 32,
+      "note": "Agent builds its own Realtime inside, so 31 of its 39 resources are the ones Realtime creates and exist once when both are on; the sandbox preset gives 48.",
+      "extraImports": []
+    },
+    {
+      "id": "realtime",
+      "label": "Realtime",
+      "package": "@aws-cdk-blocks/bb-realtime",
+      "version": "1.0.0",
+      "tagline": "Push live updates to connected browsers",
+      "codeFile": "cdk-blocks/index.ts",
+      "importName": "Realtime",
+      "importFrom": "aws-cdk-blocks",
+      "code": [
+        "const live = new Realtime(scope, 'live', {",
+        "  namespaces: { updates: Realtime.namespace(z.object({ text: z.string() })) },",
+        "});"
+      ],
+      "resources": [
+        {
+          "type": "AWS::ApiGatewayV2::Api",
+          "service": "API Gateway",
+          "name": "WebSocket API",
+          "count": 1,
+          "note": "One per app"
+        },
+        {
+          "type": "AWS::ApiGatewayV2::Route",
+          "service": "API Gateway",
+          "name": "Route",
+          "count": 3,
+          "note": "$connect, $disconnect, $default"
+        },
+        {
+          "type": "AWS::DynamoDB::Table",
+          "service": "DynamoDB",
+          "name": "Table",
+          "count": 1,
+          "note": "Connections"
+        },
+        {
+          "type": "AWS::SecretsManager::Secret",
+          "service": "Secrets Manager",
+          "name": "Secret",
+          "count": 1,
+          "note": "Signs channel tokens"
+        }
+      ],
+      "supporting": [
+        {
+          "type": "AWS::IAM::Policy",
+          "count": 6
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "count": 6
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "count": 5
+        },
+        {
+          "type": "AWS::ApiGatewayV2::Integration",
+          "count": 3
+        },
+        {
+          "type": "AWS::Lambda::Permission",
+          "count": 3
+        },
+        {
+          "type": "AWS::Logs::LogGroup",
+          "count": 2
+        },
+        {
+          "type": "AWS::ApiGatewayV2::Stage",
+          "count": 1
+        },
+        {
+          "type": "AWS::CloudFormation::CustomResource",
+          "count": 1
+        },
+        {
+          "type": "AWS::StepFunctions::StateMachine",
+          "count": 1
+        }
+      ],
+      "supportingCount": 28,
+      "note": "The WebSocket API and its plumbing are shared by every Realtime in the app, including the one inside Agent, so Realtime adds nothing when Agent is on.",
+      "extraImports": [
+        "import { z } from 'zod';"
+      ]
+    },
+    {
+      "id": "hosting",
+      "label": "Hosting",
+      "package": "@aws-cdk-blocks/hosting",
+      "version": "1.0.0",
+      "tagline": "Put the frontend on a CDN in front of your API",
+      "codeFile": "cdk-blocks/index.cdk.ts",
+      "importName": "Hosting",
+      "importFrom": "aws-cdk-blocks/cdk",
+      "code": [
+        "new Hosting(blocksStack, 'Hosting', {",
+        "  root: join(__dirname, '..'),",
+        "  api: blocksStack,",
+        "});"
+      ],
+      "resources": [
+        {
+          "type": "AWS::CloudFront::Distribution",
+          "service": "CloudFront",
+          "name": "Distribution",
+          "count": 1,
+          "note": "Serves the site and proxies the API"
+        },
+        {
+          "type": "AWS::S3::Bucket",
+          "service": "S3",
+          "name": "Bucket",
+          "count": 2,
+          "note": "Site files, access logs"
+        },
+        {
+          "type": "AWS::CloudFront::Function",
+          "service": "CloudFront",
+          "name": "Function",
+          "count": 3,
+          "note": "Request and response routing"
+        },
+        {
+          "type": "AWS::CloudFront::KeyValueStore",
+          "service": "CloudFront",
+          "name": "Key value store",
+          "count": 1,
+          "note": "Route table for the functions"
+        },
+        {
+          "type": "AWS::CloudWatch::Alarm",
+          "service": "CloudWatch",
+          "name": "Alarm",
+          "count": 1,
+          "note": "5xx error rate"
+        },
+        {
+          "type": "AWS::SNS::Topic",
+          "service": "SNS",
+          "name": "Topic",
+          "count": 1,
+          "note": "Alarm notifications"
+        }
+      ],
+      "supporting": [
+        {
+          "type": "AWS::Lambda::LayerVersion",
+          "count": 5
+        },
+        {
+          "type": "Custom::CDKBucketDeployment",
+          "count": 5
+        },
+        {
+          "type": "AWS::IAM::Policy",
+          "count": 3
+        },
+        {
+          "type": "AWS::IAM::Role",
+          "count": 3
+        },
+        {
+          "type": "AWS::Lambda::Function",
+          "count": 3
+        },
+        {
+          "type": "AWS::S3::BucketPolicy",
+          "count": 2
+        },
+        {
+          "type": "Custom::S3AutoDeleteObjects",
+          "count": 2
+        },
+        {
+          "type": "AWS::CloudFormation::CustomResource",
+          "count": 1
+        },
+        {
+          "type": "AWS::CloudFront::OriginAccessControl",
+          "count": 1
+        },
+        {
+          "type": "AWS::KMS::Key",
+          "count": 1
+        }
+      ],
+      "supportingCount": 26,
+      "note": "Default CloudFront front door with a one-page static site; Hosting goes in cdk-blocks/index.cdk.ts, takes the stack rather than the scope, and the templates leave it out of a plain sandbox.",
+      "extraImports": []
+    },
+    {
+      "id": "housebucket",
+      "label": "HouseBucket",
+      "package": "@your-team/bb-house-bucket",
+      "version": "1.0.0",
+      "tagline": "File storage that follows your team's standards",
+      "codeFile": "cdk-blocks/index.ts",
+      "importName": "HouseBucket",
+      "importFrom": "@your-team/bb-house-bucket",
+      "code": [
+        "const intake = new HouseBucket(scope, 'intake', {",
+        "  owner: 'intake-team',",
+        "  dataClassification: 'internal',",
+        "  costCenter: 'cc-4410',",
+        "});"
+      ],
+      "resources": [
+        {
+          "type": "AWS::S3::Bucket",
+          "service": "S3",
+          "name": "Bucket",
+          "count": 2,
+          "note": "Your files, plus a log bucket"
+        },
+        {
+          "type": "AWS::KMS::Key",
+          "service": "KMS",
+          "name": "Key",
+          "count": 1,
+          "note": "Your own key, rotation on"
+        },
+        {
+          "type": "AWS::DynamoDB::Table",
+          "service": "DynamoDB",
+          "name": "Table",
+          "count": 1,
+          "note": "Audit trail, one entry per upload"
+        }
+      ],
+      "supporting": [
+        {
+          "type": "AWS::S3::BucketPolicy",
+          "count": 2
+        }
+      ],
+      "supportingCount": 2,
+      "note": "A custom Block, built on FileBucket, from a package in the app's workspace. These counts are all four standards on; custom.json has every standards key.",
+      "extraImports": [
+        "import { HouseBucket } from '@your-team/bb-house-bucket';"
+      ],
+      "custom": true,
+      "builtOn": "FileBucket",
+      "standardsKey": "key+retention+logging+tags"
+    }
+  ],
+  "baselineResources": 59,
+  "comboAdded": {
+    "kvstore": 1,
+    "database": 21,
+    "kvstore+database": 22,
+    "auth": 13,
+    "kvstore+auth": 14,
+    "database+auth": 34,
+    "kvstore+database+auth": 35,
+    "agent": 39,
+    "kvstore+agent": 40,
+    "database+agent": 60,
+    "kvstore+database+agent": 61,
+    "auth+agent": 52,
+    "kvstore+auth+agent": 53,
+    "database+auth+agent": 73,
+    "kvstore+database+auth+agent": 74,
+    "realtime": 34,
+    "kvstore+realtime": 35,
+    "database+realtime": 55,
+    "kvstore+database+realtime": 56,
+    "auth+realtime": 47,
+    "kvstore+auth+realtime": 48,
+    "database+auth+realtime": 68,
+    "kvstore+database+auth+realtime": 69,
+    "agent+realtime": 39,
+    "kvstore+agent+realtime": 40,
+    "database+agent+realtime": 60,
+    "kvstore+database+agent+realtime": 61,
+    "auth+agent+realtime": 52,
+    "kvstore+auth+agent+realtime": 53,
+    "database+auth+agent+realtime": 73,
+    "kvstore+database+auth+agent+realtime": 74,
+    "hosting": 35,
+    "kvstore+hosting": 36,
+    "database+hosting": 56,
+    "kvstore+database+hosting": 57,
+    "auth+hosting": 48,
+    "kvstore+auth+hosting": 49,
+    "database+auth+hosting": 69,
+    "kvstore+database+auth+hosting": 70,
+    "agent+hosting": 74,
+    "kvstore+agent+hosting": 75,
+    "database+agent+hosting": 95,
+    "kvstore+database+agent+hosting": 96,
+    "auth+agent+hosting": 87,
+    "kvstore+auth+agent+hosting": 88,
+    "database+auth+agent+hosting": 108,
+    "kvstore+database+auth+agent+hosting": 109,
+    "realtime+hosting": 69,
+    "kvstore+realtime+hosting": 70,
+    "database+realtime+hosting": 90,
+    "kvstore+database+realtime+hosting": 91,
+    "auth+realtime+hosting": 82,
+    "kvstore+auth+realtime+hosting": 83,
+    "database+auth+realtime+hosting": 103,
+    "kvstore+database+auth+realtime+hosting": 104,
+    "agent+realtime+hosting": 74,
+    "kvstore+agent+realtime+hosting": 75,
+    "database+agent+realtime+hosting": 95,
+    "kvstore+database+agent+realtime+hosting": 96,
+    "auth+agent+realtime+hosting": 87,
+    "kvstore+auth+agent+realtime+hosting": 88,
+    "database+auth+agent+realtime+hosting": 108,
+    "kvstore+database+auth+agent+realtime+hosting": 109,
+    "housebucket": 6,
+    "kvstore+housebucket": 7,
+    "database+housebucket": 27,
+    "kvstore+database+housebucket": 28,
+    "auth+housebucket": 19,
+    "kvstore+auth+housebucket": 20,
+    "database+auth+housebucket": 40,
+    "kvstore+database+auth+housebucket": 41,
+    "agent+housebucket": 45,
+    "kvstore+agent+housebucket": 46,
+    "database+agent+housebucket": 66,
+    "kvstore+database+agent+housebucket": 67,
+    "auth+agent+housebucket": 58,
+    "kvstore+auth+agent+housebucket": 59,
+    "database+auth+agent+housebucket": 79,
+    "kvstore+database+auth+agent+housebucket": 80,
+    "realtime+housebucket": 40,
+    "kvstore+realtime+housebucket": 41,
+    "database+realtime+housebucket": 61,
+    "kvstore+database+realtime+housebucket": 62,
+    "auth+realtime+housebucket": 53,
+    "kvstore+auth+realtime+housebucket": 54,
+    "database+auth+realtime+housebucket": 74,
+    "kvstore+database+auth+realtime+housebucket": 75,
+    "agent+realtime+housebucket": 45,
+    "kvstore+agent+realtime+housebucket": 46,
+    "database+agent+realtime+housebucket": 66,
+    "kvstore+database+agent+realtime+housebucket": 67,
+    "auth+agent+realtime+housebucket": 58,
+    "kvstore+auth+agent+realtime+housebucket": 59,
+    "database+auth+agent+realtime+housebucket": 79,
+    "kvstore+database+auth+agent+realtime+housebucket": 80,
+    "hosting+housebucket": 41,
+    "kvstore+hosting+housebucket": 42,
+    "database+hosting+housebucket": 62,
+    "kvstore+database+hosting+housebucket": 63,
+    "auth+hosting+housebucket": 54,
+    "kvstore+auth+hosting+housebucket": 55,
+    "database+auth+hosting+housebucket": 75,
+    "kvstore+database+auth+hosting+housebucket": 76,
+    "agent+hosting+housebucket": 80,
+    "kvstore+agent+hosting+housebucket": 81,
+    "database+agent+hosting+housebucket": 101,
+    "kvstore+database+agent+hosting+housebucket": 102,
+    "auth+agent+hosting+housebucket": 93,
+    "kvstore+auth+agent+hosting+housebucket": 94,
+    "database+auth+agent+hosting+housebucket": 114,
+    "kvstore+database+auth+agent+hosting+housebucket": 115,
+    "realtime+hosting+housebucket": 75,
+    "kvstore+realtime+hosting+housebucket": 76,
+    "database+realtime+hosting+housebucket": 96,
+    "kvstore+database+realtime+hosting+housebucket": 97,
+    "auth+realtime+hosting+housebucket": 88,
+    "kvstore+auth+realtime+hosting+housebucket": 89,
+    "database+auth+realtime+hosting+housebucket": 109,
+    "kvstore+database+auth+realtime+hosting+housebucket": 110,
+    "agent+realtime+hosting+housebucket": 80,
+    "kvstore+agent+realtime+hosting+housebucket": 81,
+    "database+agent+realtime+hosting+housebucket": 101,
+    "kvstore+database+agent+realtime+hosting+housebucket": 102,
+    "auth+agent+realtime+hosting+housebucket": 93,
+    "kvstore+auth+agent+realtime+hosting+housebucket": 94,
+    "database+auth+agent+realtime+hosting+housebucket": 114,
+    "kvstore+database+auth+agent+realtime+hosting+housebucket": 115
+  }
+}

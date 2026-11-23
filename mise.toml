@@ -1,0 +1,7 @@
+# The scanners `npm run scan` calls, pinned. `mise install` in this folder puts them on PATH.
+# Node and the npm packages are pinned in package.json and package-lock.json, not here.
+[tools]
+semgrep = "1.180.0"
+betterleaks = "1.9.0"
+osv-scanner = "2.7.0"
+trivy = "0.76.1"

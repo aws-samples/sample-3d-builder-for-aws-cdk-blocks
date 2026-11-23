@@ -1,0 +1,19 @@
+{
+  "name": "cdk-blocks",
+  "version": "0.0.0",
+  "license": "MIT-0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.1172.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "browser": "./client.js",
+      "react-server": "./client.js",
+      "import": "./client.js",
+      "default": "./index.ts"
+    }
+  }
+}

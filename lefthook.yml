@@ -1,0 +1,13 @@
+# Optional git hooks. Nothing installs them for you: run `npx lefthook@2.2.2 install` once if you want them.
+pre-commit:
+  parallel: false
+  jobs:
+    - name: biome
+      glob: "*.{ts,tsx,mjs,json,jsonc,css,html}"
+      run: npx biome check --error-on-warnings --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+    - name: secrets
+      run: betterleaks git --pre-commit --staged --no-banner --redact=100 .
+pre-push:
+  jobs:
+    - name: check
+      run: npm run check

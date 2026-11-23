@@ -1,0 +1,92 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": [
+      "**",
+      "!src/data",
+      "!src/icons/*.json",
+      "!src/**/icon-paths.json",
+      "!cdk-blocks/*.json",
+      "cdk-blocks/package.json",
+      "!package-lock.json"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 140
+  },
+  "markdown": {
+    "formatter": {
+      "enabled": false
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "a11y": {
+        // The flagged elements are <div role="group" aria-label="...">, which is valid ARIA. A <fieldset> would bring its own border, padding and minimum width.
+        "useSemanticElements": "off"
+      },
+      "style": {
+        // Strict null checks are on. The assertions that remain sit right after a guard the compiler can't follow (a Map.has before a Map.get, a canvas 2D context).
+        "noNonNullAssertion": "off",
+        // The stylesheet is ordered by page section, and base rules follow some section rules on purpose. Reordering it is a visual change, not a lint fix.
+        "noDescendingSpecificity": "off"
+      },
+      "suspicious": {
+        // Every flagged list is positional data with no id of its own (code lines, tokens, path segments, resources of one type). Each is rebuilt whole and never reordered.
+        "noArrayIndexKey": "off"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double"
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["src/**"],
+      "javascript": {
+        "formatter": {
+          "quoteStyle": "double"
+        }
+      }
+    },
+    {
+      // The custom Block's package equals the generator's output byte for byte (a test compares them), so it is linted but never rewritten.
+      "includes": ["packages/bb-house-bucket/**"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            // The browser stub's constructor takes any arguments so client code that names the class still type-checks.
+            "noUselessConstructor": "off"
+          }
+        }
+      },
+      "formatter": {
+        "enabled": false
+      },
+      "assist": {
+        "enabled": false
+      }
+    }
+  ]
+}

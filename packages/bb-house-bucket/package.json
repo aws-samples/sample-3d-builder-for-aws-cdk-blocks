@@ -1,0 +1,49 @@
+{
+  "name": "@your-team/bb-house-bucket",
+  "version": "1.0.0",
+  "description": "HouseBucket: a custom Block that wraps FileBucket with a platform's standards for file intake.",
+  "license": "MIT-0",
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "DESIGN.md",
+    "src",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "browser": "./dist/index.browser.js",
+      "cdk": {
+        "types": "./dist/index.cdk.d.ts",
+        "default": "./dist/index.cdk.js"
+      },
+      "aws-runtime": "./dist/index.aws.js",
+      "types": "./dist/index.mock.d.ts",
+      "default": "./dist/index.mock.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "node scripts/generate-version.mjs HouseBucket",
+    "build": "tsc --build",
+    "test": "node --test --test-concurrency=1 dist/*.test.js"
+  },
+  "dependencies": {
+    "@aws-cdk-blocks/bb-file-bucket": "1.0.0",
+    "@aws-cdk-blocks/bb-kv-store": "1.0.0",
+    "@aws-cdk-blocks/bb-logger": "1.0.0",
+    "@aws-cdk-blocks/core": "1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.43",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "aws-cdk-lib": "^2.257.0",
+    "constructs": "^10.6.0"
+  },
+  "keywords": [
+    "aws-blocks"
+  ],
+  "private": true
+}

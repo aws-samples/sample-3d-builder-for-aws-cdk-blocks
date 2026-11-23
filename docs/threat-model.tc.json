@@ -1,0 +1,2093 @@
+{
+  "schema": 1,
+  "applicationInfo": {
+    "name": "3D builder for AWS CDK Blocks (sample)",
+    "description": "Threat model version: 5\n\n### What we're working on\n\nThis repository is sample code: a 3D builder for AWS CDK Blocks, with the on-screen name Baseplate. A visitor places Blocks on a plate in the browser and sees the AWS resources each one creates. The builder itself runs in the browser from bundled data. The backend adds an agent that picks pieces, saved builds with share links, a live gallery and a here-now count.\n\nA person who clones the repository deploys it into their own AWS account. AWS hosts no running copy. The sample isn't meant for production use.\n\n### Scope\n\nIn scope: the code on this branch, the stack it synthesizes (155 resources), and what a stranger inherits by deploying it or copying from it. Out of scope: the deployer's account settings outside the stack (CloudTrail, budgets, other workloads), and the insides of the CDK Blocks library beyond what the stack shows.\n\n### How to read this file\n\nThe method is the four questions of the AWS workshop \"Threat modeling for builders\". Each threat is written in the threat grammar and tagged with its trust boundary, STRIDE letters and a priority. Each mitigation carries `custom:state`, `custom:evidence` (file and line in this repository, or what the synthesized template shows) and `custom:tests` (the test that holds it and the command that runs it).\n\nA mitigation that was seen working on AWS also carries `custom:observed`. An entry that cites `live-deploy/v1/REPORT.md` is from CDK Blocks 1.0.0 (commit `6d13623`, deployed twice and destroyed once on 2026-11-21). Every other entry is from before the move to 1.0.0, when the app ran on `@aws-blocks/blocks` 0.9.0. Those earlier entries cite the maintainers' records of test deploys: `deploy-test/REPORT.md` (the public copy, cloned fresh, deployed to a new stack and destroyed on 2026-11-19) and `live-deploy/REPORT.md`, `live-deploy/REPORT-2.md` and `live-deploy/REPORT-3.md` (this branch deployed over a standing stack on 2026-11-19 and 2026-11-20). The records are kept outside this repository.\n\nEvery mitigation has the status Identified and every threat is open. That's deliberate. The method this file follows lets a mitigation be marked resolved only when it rests on behavior ids from a registry with a passing test for each id. This repository has no such registry, and this file doesn't invent ids that nothing checks. The evidence is real and is listed; each open threat's residual risk is for a person to accept, with an owner and an end date, and the approval of a version records those acceptances.\n\nStatements about deployed behavior come from the code, the local tests and a `cdk synth` on 2026-11-21 with the 1.0.0 packages, except where `custom:observed` cites a test deploy of the earlier release. Not seen on AWS: a throttled request, an alarm firing, the stale-address retry, the opt-in WAF, the retain option, and any Region but us-east-1. The CI workflow has never run.\n\n### Changes since version 4\n\nVersion 4 was approved on 2026-11-21. Threats 1 to 23 and mitigations 1 to 29 keep their numbers and ids. No threat or mitigation was added, closed or removed.\n\n- Threat 17: no advisory is ignored any more. aws-cdk-lib moved from 2.277.0 to 2.278.0, whose bundled minimatch has the fix for CVE-2026-118764, and the ignore entry was removed. The residual risk names that upgrade as a second one that didn't wait out the 7-day cooldown.\n- The table of known findings no longer lists the minimatch advisory.\n- Mitigation 23: the scan also runs npm audit and a check that every production package the lockfile installs is in THIRD-PARTY-LICENSES. A release scan had found five packages missing from that file; they're listed now and a test holds it.\n- A new row in the table of known findings records that S3-managed encryption (SSE-S3) on six of the seven buckets is accepted for this sample.\n- Threat 23 and mitigation 29: the dashboard route's redirect was seen on the 1.0.0 stack on 2026-11-21.\n- Twelve residual-risk notes now open with the words \"A residual risk to accept\" in place of their earlier opening words, and two sentences about approval in this description were reworded to say how approval works. Nothing else in them changed.\n- Every statement read from the synthesized template cites the synth of 2026-11-22 with aws-cdk-lib 2.278.0. The template has the same 155 resources as before.\n- The sample's own version is 1.0.0. No threat or mitigation depends on it.\n- Every file and line reference was located again at this commit.\n\n### Known findings that stay\n\n| Finding | Reason | Look again | Where |\n|---|---|---|---|\n| cdk-nag AwsSolutions, 16 rules in the report of 2026-11-21, report only | npm run nag prints them and isn't a gate. Nearly all sit on resources the CDK Blocks constructs create: wildcard IAM statements, managed policies, no WAF, no API access logs, no authorizer, Lambda defaults, TLSv1 on the default certificate, no secret rotation on either secret. | Each CDK Blocks upgrade | cdk-blocks/scripts/cdk-nag.ts |\n| Six of the seven buckets are encrypted with S3-managed keys (SSE-S3), which scanners report as no customer-managed key | Accepted for this sample by the maintainer on 2026-11-21: SSE-S3 is fine here. The buckets hold the built page, logs, the config file and agent session snapshots. The gallery bucket has a customer-managed key through the custom Block. These are CDK Blocks and Hosting defaults. | None set | threat 13, mitigation 17 |\n| F10, a stored file with no audit entry | The custom Block's source is generator output. The fix belongs in the generator. | None set | threat 15 |\n| F12, presence can be inflated | A fix needs an identity for each client. | None set | threat 16 |\n| F13, in part: the always-on render loop and the renderer fallback | Changing the loop alters every animation, and no browser on hand fails the way the fallback needs. | None set | threat 21 |\n| F15, in part: no Content-Security-Policy header and no API access logs | Both are CDK Blocks defaults. Access logging changes an account-wide API Gateway role. | None set | threats 14 and 20 |\n\n### Cost exposure for a deployer\n\nThese are estimates from list prices for US East (N. Virginia) on 2026-11-19. Nobody has measured them on a bill.\n\n| Case | Estimate | How it was derived |\n|---|---|---|\n| Idle stack | about 6 to 10 US dollars a month | Counted from the template: 2 KMS keys at $1.00, 1 dashboard at $3.00, 3 alarms at $0.10, 2 secrets at $0.40, plus the once-a-minute job (43,200 runs a month of a 2,048 MB function, assumed at half a second each) and small DynamoDB, S3 and log charges, each put at under $1. |\n| Agent at its daily cap | about 0.60 US dollars a day | The caps bound it: 200 questions x 4 model calls x 1,000 output tokens is at most 800,000 output tokens a day, and at the 2,400 input tokens a call that test calls used, about 1.9 million input tokens. Claude Haiku 5.5 through the global inference profile costs $0.10 per million input tokens and $0.50 per million output tokens for prompts of up to 100,000 tokens (AWS Price List for Amazon Bedrock in us-east-1, published and read 2026-11-20). That's about $0.19 plus $0.40. AgentCore runtime time isn't in it. |\n| Flood at the throttle | 10 to 15 US dollars a day | 25 requests a second for 86,400 seconds is 2.16 million requests: about $7.56 for API Gateway at $3.50 per million, $0.43 for Lambda requests, about $3.60 for Lambda time if each request takes 50 ms at 2,048 MB (an assumption), and about $2 for DynamoDB reads. |\n\n### Did we do a good enough job\n\nEvery threat links to at least one mitigation, and every mitigation names its evidence. 7 of the 29 mitigations have no test in the repository; each one's `custom:tests` says so. For each mitigation the modeler asked how it could be bypassed, and the answer is in the threat's `custom:residual`. The two threats with the most left to do are the shared throttle (threat 4) and the wide role (threat 12). A version counts once a person has reviewed and approved it.\n"
+  },
+  "architecture": {
+    "description": "### Components\n\n- **Page**: a React 19 and React Three Fiber single-page app, built by Vite and served from a private S3 bucket through CloudFront (the Hosting construct). CloudFront also forwards `/cdk-blocks/api`, the other paths under `/cdk-blocks/` that CDK Blocks reserves, and the earlier prefix `/aws-blocks/*` to the API.\n- **API**: one API Gateway REST API with no authorizer, in front of one Lambda function (Node.js 24, 2,048 MB). Every API method is the same route, `POST /cdk-blocks/api`, dispatched by name; `/aws-blocks/api` is an alias that CDK Blocks 1.0 keeps. The function also answers three built-in GET routes of CDK Blocks, `/cdk-blocks/dashboard`, `/cdk-blocks/resources` and `/cdk-blocks/settings`, each with a redirect to the AWS console. Open methods: `getApp`, `joinGallery`, `listGallery`, `getBuild`, `heartbeat`, `checkInvite`, `getProposal`. Methods that need the invite code: `saveBuild`, `agentCreateConversationId`, `agentGetChannel`, `agentStream`, `agentGetConversation`.\n- **Realtime**: one API Gateway WebSocket API (the Realtime block) for the gallery channel and the agent's streaming channels.\n- **Agent**: the Agent block, running on Amazon Bedrock AgentCore and calling Anthropic Claude Haiku 5.5 through its global inference profile, `global.anthropic.claude-haiku-5-5`. The model thinks before it answers; the thinking counts toward each call's output cap and isn't shown on the page. Its three tools are `browseCatalog`, `snapPieces` and a local stand-in.\n- **Stores**: seven DynamoDB tables (builds, counters, proposals, the agent's conversations and messages, realtime connections, the gallery audit trail) and seven S3 buckets (site, gallery files, agent snapshots, config, and three log buckets).\n- **Secrets**: two Secrets Manager secrets, both generated at deploy: the invite code, and the key the Realtime block signs channel tokens with.\n- **Scheduled job**: an EventBridge Scheduler schedule that runs the same function once a minute to pick the build of the hour and write the gallery snapshot through the custom Block, HouseBucket.\n- **Observability**: a Logger, Metrics, a CloudWatch dashboard, three alarms and one SNS topic.\n- **Identity**: one IAM role shared by the API function, the scheduled job and the AgentCore runtime.\n\n### What the deployer chooses\n\n`BASEPLATE_TAGS`, `BASEPLATE_RETAIN_DATA`, `BASEPLATE_API_WAF` and `BASEPLATE_ALARM_EMAIL`, read from the environment at deploy.\n"
+  },
+  "dataflow": {
+    "description": "### Data flows\n\n1. A visitor's browser loads the page from CloudFront over HTTPS. An invite link carries the code in the URL fragment; the page keeps it in sessionStorage.\n2. The page calls open API methods to read the gallery and to check in every 15 seconds with a random session id.\n3. The page opens a WebSocket with a channel token from `joinGallery` and receives gallery events. It can't publish.\n4. With the invite code, the page saves a build (piece ids only). The function checks the code, takes budgets, writes the build and publishes an event.\n5. With the invite code, the page asks the agent a question of at most 300 characters. The function checks the code, the conversation's owner and the budgets, then calls the model. The model answers through a tool limited to seven piece ids, and its reply text streams back on the conversation's channel.\n6. Once a minute the scheduled job reads recent builds and writes a snapshot file to the gallery bucket through the custom Block, with an audit entry.\n7. The deployer's machine, or CI, installs packages from npm and synthesizes and deploys the stack with the AWS CDK.\n\n### What's stored\n\n- Saved builds: piece ids, a source, a time. No visitor text. No expiry.\n- Agent conversations and messages: the visitor's questions and the model's answers. No expiry.\n- Counters and presence markers: numbers under keys that hold a date, a minute or a random session id. They expire.\n- The invite code, in Secrets Manager.\n- Logs: reasons for refusals, build ids and pieces, question lengths. No question text and no addresses from the app's own logging.\n\n### Trust boundaries and STRIDE\n\nSTRIDE is applied per element type: an external entity gets S and R, a process all six, a data store T, R, I and D, a data flow T, I and D.\n\n| Boundary | Element type | STRIDE that applies | Threats | Not raised, and why |\n|---|---|---|---|---|\n| The visitor's browser and the static page from CloudFront | process | S, T, R, I, D, E | T8 (TI), T20 (TI), T21 (D) | S: The page has no sign-in to spoof; the invite code is covered under the invite boundary. R: The page stores nothing a visitor could later deny; refusals are logged on the server (threat 14). E: The page holds no privilege beyond the invite code (threat 8). |\n| The internet and the REST API (API Gateway, one Lambda function) | process | S, T, R, I, D, E | T4 (D), T14 (R), T16 (TD), T23 (I) | S: Covered under the invite boundary (threats 1 to 3): the API itself has no authorizer. E: Covered under the account boundary (threat 12). |\n| The internet and the WebSocket API (the Realtime block) | data flow | T, I, D | T9 (ST) | I: The gallery channel carries public data; agent channels need the invite and ownership (threat 10). D: Shares the stage throttle (threat 4). |\n| Anonymous callers and invite holders, inside the handler | external entity | S, R | T1 (S), T2 (S), T3 (SR), T10 (I) | Nothing left out |\n| The function and the model (the Agent block on Bedrock AgentCore, Claude Haiku 5.5) | process | S, T, R, I, D, E | T5 (D), T7 (TE) | S: The function calls the model with the stack's role; no caller identity reaches it. R: The Agent block stores each question and answer (threat 11). I: The model sees the question, the system prompt and the public catalog. Stored gallery content never reaches it. |\n| The function and its stores (DynamoDB, S3, Secrets Manager) | data store | T, R, I, D | T6 (D), T11 (I), T13 (TI), T15 (R), T22 (D) | Nothing left out |\n| The stack's one IAM role and the rest of the deployer's account | process | S, T, R, I, D, E | T12 (E) | S: The role is assumed by Lambda and by AgentCore in this account only, per its trust policy in the template. T: Covered by threat 12. R: CloudTrail is the deployer's account setting, outside this stack. I: Covered by threats 11 and 12. D: Covered by threats 4 and 5. |\n| npm, GitHub and readers of the repository, and the deployer's machine and CI | external entity | S, R | T17 (TE), T18 (S), T19 (I) | R: Commits and releases are the repository host's record; the sample adds nothing. |\n"
+  },
+  "assumptions": [
+    {
+      "id": "e2fae150-5ab0-5867-abcd-84a5a215d8f6",
+      "numericId": 1,
+      "displayOrder": 1,
+      "content": "A person who clones the repository deploys the stack into an AWS account they control. AWS hosts no running copy of this sample."
+    },
+    {
+      "id": "6a347bd8-6c47-588b-9233-de400f575fda",
+      "numericId": 2,
+      "displayOrder": 2,
+      "content": "The deployer controls who can read the account's tables, logs, buckets and secret, and treats the deployment as a demo, not a production system."
+    },
+    {
+      "id": "9fe90265-515c-5ef9-b039-f99847921ec6",
+      "numericId": 3,
+      "displayOrder": 3,
+      "content": "The invite code is a shared demo code, not a sign-in. Anyone who has the link counts as invited."
+    },
+    {
+      "id": "dc8fd429-798a-5fd0-81db-e9b46cfcedc6",
+      "numericId": 4,
+      "displayOrder": 4,
+      "content": "The app collects no personal data by design. The one free-text field is the question to the agent."
+    },
+    {
+      "id": "712da304-7631-5c22-b336-f4d476deed74",
+      "numericId": 5,
+      "displayOrder": 5,
+      "content": "The CDK Blocks packages behave as their pinned versions read on 2026-11-21: aws-cdk-blocks 1.0.0 and, under @aws-cdk-blocks, core, bb-agent, bb-realtime, bb-kv-store, bb-secret and hosting 1.0.0."
+    },
+    {
+      "id": "38b452c9-9c9e-5102-9c5e-7e431c54c18a",
+      "numericId": 6,
+      "displayOrder": 6,
+      "content": "The branch ran on AWS in four test deploys by the maintainers on 2026-11-19 and 2026-11-20 on the earlier packages (@aws-blocks/blocks 0.9.0), and twice on CDK Blocks 1.0.0 on 2026-11-21, at the commit before the builder's data was read again: once deployed, used and destroyed, and once deployed and left running. All were in one account and one Region (us-east-1). A custom:observed entry that cites live-deploy/v1 is from 1.0.0; every other one is from the earlier release, and for those what 1.0.0 does when deployed comes from the code, the tests and the synthesized template. The CI workflow has never run."
+    },
+    {
+      "id": "ae04a676-9c62-58d8-88a8-2b7b4597064b",
+      "numericId": 7,
+      "displayOrder": 7,
+      "content": "Amazon Bedrock runs the model through a global inference profile, so a question may be processed in an AWS Region other than the stack's."
+    },
+    {
+      "id": "aa61ba04-bbc4-5474-a9d3-acffd27bde17",
+      "numericId": 8,
+      "displayOrder": 8,
+      "content": "The deployer's account has access to Anthropic Claude Haiku 5.5 in Amazon Bedrock: Anthropic's use case details are submitted and the AWS Marketplace subscription is active. Until then the agent answers with an error and the rest of the app works. The maintainers' account already had access, so that first-call path wasn't seen."
+    }
+  ],
+  "mitigations": [
+    {
+      "id": "743ed9eb-aab7-5a3d-8177-0351012fbe19",
+      "numericId": 1,
+      "displayOrder": 1,
+      "status": "mitigationIdentified",
+      "content": "The handler checks the invite code on every call to saveBuild and to each of the four agent methods, before it reads or takes any budget. A refused call throws 403 and counts a Refusals metric. On AWS it's logged as one WARN line with the reason.",
+      "metadata": [
+        {
+          "key": "custom:state",
+          "value": "In the code, held by tests, and seen on AWS"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/index.ts:392 (the check)",
+            "cdk-blocks/index.ts:646 (saveBuild)",
+            "cdk-blocks/index.ts:691 (its first statement after parsing is requireInvite)",
+            "cdk-blocks/index.ts:708 (same)",
+            "cdk-blocks/index.ts:716 (same)",
+            "cdk-blocks/index.ts:770 (same)"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/e2e.test.ts:288 \"save: no invite code is refused\" (npm run test:e2e)",
+            "test/e2e.test.ts:294 \"save: a wrong invite code is refused and nothing reaches the gallery\" (npm run test:e2e)",
+            "test/e2e.test.ts:303 \"save: the invite is checked before the budget\" (npm run test:e2e)",
+            "test/e2e.test.ts:482 \"agent: without the invite, or with a wrong one, every agent method is refused\" (npm run test:e2e)",
+            "test/e2e.test.ts:509 \"agent: the invite is checked before the budget\" (npm run test:e2e)"
+          ]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, check 9: with a wrong code, saveBuild and the four agent methods each answered 403 InviteRequiredException; saveBuild with no code answered 400",
+            "live-deploy/REPORT.md, 'Request without a valid invite is refused': a wrong code and the code from before the deploy both drew 403, and the refused calls saved nothing",
+            "live-deploy/REPORT-2.md, check 5: the log line 'Request refused: 403 InviteRequiredException (invite)'"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "67bf15c6-19e8-5d58-a52f-663a26e41f4a",
+      "numericId": 2,
+      "displayOrder": 2,
+      "status": "mitigationIdentified",
+      "content": "The handler hashes the presented code and the stored code with SHA-256 and compares the two digests with timingSafeEqual, so the comparison takes the same time for any input. The stored code is a Secrets Manager secret that the stack generates. Its value is never in source. A read that returns no value refuses the request.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "No test measures timing. The generated length is the Secrets Manager default, which the app doesn't set."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code. The test covers accept and refuse, not timing"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/index.ts:356",
+            "cdk-blocks/index.ts:359",
+            "cdk-blocks/index.ts:336",
+            "Synthesized template: the secret has GenerateSecretString with no fixed value (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)",
+            "cdk-blocks/index.ts:357"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/e2e.test.ts:283 \"invite: a wrong code is not accepted, the right one is\" (npm run test:e2e)",
+            "test/backend.test.ts:646 \"stack: the invite secret has no fixed name\" (npm run check)"
+          ]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, check 10: the generated code was 32 characters long",
+            "deploy-test/REPORT.md, check 9: checkInvite with a wrong code answered ok false"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5e25a03b-a4e8-5431-b39e-7ce9a71e7fe8",
+      "numericId": 3,
+      "displayOrder": 3,
+      "status": "mitigationIdentified",
+      "content": "Shared budgets cap what invite holders can do: 500 saves a day and 60 a minute, 200 agent questions a day and 10 a day for each page, 1,000 new conversations a day. Each slot is a conditional write, so two requests can't take the last one. The day is checked with a read first, so a spent day writes no key.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "The CI workflow runs check, test:e2e and test:caps. It has never run on GitHub."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code, held by tests"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/shared.ts:69 (the limits start here)",
+            "cdk-blocks/budget.ts:47",
+            "cdk-blocks/budget.ts:53",
+            "cdk-blocks/index.ts:650 (saves)",
+            "cdk-blocks/index.ts:695 (conversations)",
+            "cdk-blocks/index.ts:725 (questions)",
+            ".github/workflows/ci.yml:38"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/backend.test.ts:161 \"budget: a slot is taken up to the limit\" (npm run check)",
+            "test/backend.test.ts:172 \"budget: a lost race is retried\" (npm run check)",
+            "test/backend.test.ts:194 \"budget: contention on every attempt reports busy\" (npm run check)",
+            "test/caps.test.ts:117 \"th save of the day is accepted and the next is refused\" (npm run test:caps)",
+            "test/caps.test.ts:168 \"th agent question of the day is accepted and the next is refused\" (npm run test:caps)",
+            "test/caps.test.ts:197 \"cap: new agent conversations stop at\" (npm run test:caps)",
+            "test/e2e.test.ts:791 \"cap: the shared per-minute save budget refuses with a clear message\" (npm run test:e2e)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7c19a922-faeb-5b70-8946-a055fccd9e7d",
+      "numericId": 4,
+      "displayOrder": 4,
+      "status": "mitigationIdentified",
+      "content": "API Gateway throttles the REST stage and the WebSocket stage at 25 requests a second with a burst of 50. The limit is one number shared by all callers. Every API method is the same route, so no method has a limit of its own.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "The test reads the source text. Nothing checks the template in CI."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code and in the synthesized template. The setting was seen on AWS; a 429 wasn't"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/shared.ts:98",
+            "cdk-blocks/shared.ts:99",
+            "cdk-blocks/index.cdk.ts:52",
+            "Synthesized template: ThrottlingRateLimit 25 and ThrottlingBurstLimit 50 on both stages (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/backend.test.ts:655 \"stack: the API throttle comes from shared.ts, and every alarm of ours has an action\" (npm run check)"
+          ]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, README claims table: the deployed stage had rate 25 and burst 50",
+            "deploy-test/REPORT.md, check 19: one burst of 60 parallel requests drew 60 answers of 200 and no 429, because it fit inside the burst. The throttle refusing a request wasn't shown"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "8524b6f5-8d79-56bb-bd4c-37ea795715d0",
+      "numericId": 5,
+      "displayOrder": 5,
+      "status": "mitigationIdentified",
+      "content": "Two CloudWatch alarms notify the Hosting construct's SNS topic: ApiRequestsHigh fires above 2,500 API requests in five minutes, and AgentCallsAtDailyCap fires when agent questions reach 200 in a day. The topic is encrypted with its own KMS key. Nobody is subscribed unless the deployer sets BASEPLATE_ALARM_EMAIL.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "An alarm tells the deployer. It doesn't stop requests or cap spend. No test deploy pushed enough requests to fire one, and no address was subscribed."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code and in the synthesized template. The alarms were seen on AWS; none has fired"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/index.cdk.ts:118",
+            "cdk-blocks/index.cdk.ts:101",
+            "cdk-blocks/index.cdk.ts:130",
+            "cdk-blocks/index.cdk.ts:77 (the opt-in email)",
+            "cdk-blocks/shared.ts:101",
+            "Synthesized template: both alarms list the topic under AlarmActions (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/backend.test.ts:655 \"stack: the API throttle comes from shared.ts, and every alarm of ours has an action\" (npm run check)"
+          ]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, check 20: ApiRequestsHigh, AgentCallsAtDailyCap and the Hosting 5xx alarm existed in state OK, all pointing at the alarm topic, which had its own KMS key and 0 subscriptions",
+            "live-deploy/REPORT.md, 'Request alarm exists': threshold 2,500 in 300 seconds, state OK"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ef756ef3-88d4-5dd2-8751-b9a2ac121208",
+      "numericId": 6,
+      "displayOrder": 6,
+      "status": "mitigationIdentified",
+      "content": "With BASEPLATE_API_WAF=1 the stack puts AWS WAF in front of the API with a limit of 300 requests for each client address in five minutes. It's off by default because a web ACL bills every month.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "The test covers the option's default and parsing, not the web ACL."
+        },
+        {
+          "key": "custom:state",
+          "value": "Opt-in. In the code. The modeler didn't synthesize it on this pass"
+        },
+        {
+          "key": "custom:evidence",
+          "value": ["cdk-blocks/index.cdk.ts:62", "cdk-blocks/deploy-options.ts:40", "cdk-blocks/shared.ts:103"]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/backend.test.ts:38 \"deploy options: with nothing set, one neutral tag, data removed on destroy, no WAF and no email\" (npm run check)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "253fdf91-f3c9-52ef-aaaa-81f386613284",
+      "numericId": 7,
+      "displayOrder": 7,
+      "status": "mitigationIdentified",
+      "content": "The here-now count uses keyed reads and writes only, never a table scan, so an open check-in costs the same however many keys the table holds. A new page needs room under a cap of 200 and a slot from a shared budget of 120 joins a minute. The session id must be a UUID. The building count needs the invite code.",
+      "metadata": [
+        {
+          "key": "custom:state",
+          "value": "In the code, held by tests"
+        },
+        {
+          "key": "custom:evidence",
+          "value": ["cdk-blocks/presence.ts:65", "cdk-blocks/presence.ts:99", "cdk-blocks/index.ts:488", "cdk-blocks/shared.ts:192"]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/backend.test.ts:234 \"here: a check-in never scans\" (npm run check)",
+            "test/backend.test.ts:280 \"here: a new page past the cap is not recorded\" (npm run check)",
+            "test/e2e.test.ts:423 \"here: a check-in needs a well-formed session id\" (npm run test:e2e)",
+            "test/e2e.test.ts:743 \"cap: new sessions past the per-minute join budget are refused\" (npm run test:e2e)",
+            "test/e2e.test.ts:442 \"here: a watcher counts as watching, the invite code as building\" (npm run test:e2e)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "142824cc-cf0d-56fe-adba-ac41a06992f7",
+      "numericId": 8,
+      "displayOrder": 8,
+      "status": "mitigationIdentified",
+      "content": "Each agent turn is bounded: a question of at most 300 characters, at most 4 model calls, at most 4 tool rounds and at most 1,000 output tokens for each call, thinking included. Both question budgets are taken before the model is called and given back if the call can't start. The model, Claude Haiku 5.5 through its global inference profile, is fixed in code; no request field names a model. The request sets no temperature and no topP, because this model refuses a request that sets either.",
+      "metadata": [
+        {
+          "key": "custom:state",
+          "value": "In the code. The input limit is held by a test; the model limits are enforced by the Agent block and no test here runs a model"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/shared.ts:80",
+            "cdk-blocks/shared.ts:93",
+            "cdk-blocks/shared.ts:87",
+            "cdk-blocks/index.ts:220",
+            "cdk-blocks/index.ts:245",
+            "cdk-blocks/index.ts:246",
+            "cdk-blocks/index.ts:761"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/e2e.test.ts:526 \"agent: a question must be 1 to 300 characters and the ids well formed\" (npm run test:e2e)",
+            "test/backend.test.ts:666 \"model: the agent runs Claude Haiku 5.5 through an inference profile\" (npm run check)"
+          ]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, check 17, and live-deploy/REPORT-2.md, checks 2 and 3: real model calls on the model version 2 named answered in 6 to 10 seconds. The limits themselves weren't pushed",
+            "live-deploy/REPORT-3.md, checks 2 and 3: on Claude Haiku 5.5, five real questions answered in 5.5 to 9.5 seconds, one of them a follow-up in the same conversation. CloudTrail shows the stack's role calling global.anthropic.claude-haiku-5-5. A call used about 2,150 input and 206 output tokens on average",
+            "deploy-test/REPORT.md, check 18: a 301-character question drew 400 InvalidInputException"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4108a656-a17d-5496-80ad-a519e20689db",
+      "numericId": 9,
+      "displayOrder": 9,
+      "status": "mitigationIdentified",
+      "content": "Budget counters, presence markers, agent picks and the custom Block's audit entries are each written with a time to live, so those tables don't grow without bound. A new question also deletes the conversation's last pick. In CDK Blocks 1.0 a KVStore takes the expiry on each write; a store has no switch for it.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "No test asserts the expiry. Saved builds, conversations and messages have none."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code and in the synthesized template"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/index.ts:196",
+            "cdk-blocks/index.ts:201 (the expiry on the write)",
+            "cdk-blocks/index.ts:306",
+            "packages/bb-house-bucket/src/runtime.ts:111",
+            "Synthesized template: TimeToLiveSpecification is on for 7 of 7 tables. The app writes an expiry to the proposals, counters and gallery audit tables, and the Realtime Block to its connections table. The app writes none to builds, and it sets none for the Agent Block's conversations and messages (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["None in the repository"]
+        }
+      ]
+    },
+    {
+      "id": "354de467-8940-5dd5-b887-7779d0b36fed",
+      "numericId": 10,
+      "displayOrder": 10,
+      "status": "mitigationIdentified",
+      "content": "The model can change the page only through a tool whose input is an array of the seven piece ids and a reason of at most 200 characters. The server filters the ids against the fixed list again when it stores the pick and when it returns it, and the store is declared with the pick's schema. Resource names and counts come from the bundled mapping, never from the model.",
+      "metadata": [
+        {
+          "key": "custom:state",
+          "value": "In the code, held by tests on the local stand-in. Real model calls were seen on AWS; none tried an injection"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/shared.ts:17",
+            "cdk-blocks/shared.ts:21 (sortPieces drops anything else)",
+            "cdk-blocks/index.ts:209",
+            "cdk-blocks/index.ts:200 (on store)",
+            "cdk-blocks/index.ts:786 (on read)",
+            "cdk-blocks/shared.ts:160"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/e2e.test.ts:621 \"enum has the seven ids\" (npm run test:e2e)",
+            "test/e2e.test.ts:561 \"agent: the local canned agent snaps its fixed set through the real tool\" (npm run test:e2e)",
+            "test/e2e.test.ts:728 \"agent: a message that triggers no tool leaves no proposal\" (npm run test:e2e)"
+          ]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, check 17, live-deploy/REPORT.md and live-deploy/REPORT-2.md, checks 2 and 3: every real model call on the model version 2 named picked valid piece ids (auth, realtime, hosting)",
+            "live-deploy/REPORT-3.md, checks 2 and 5: on Claude Haiku 5.5, six real questions with different prompts each picked valid piece ids, and no thinking text reached the page"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7129f55a-aa5a-5766-b5b9-ef1f5081139f",
+      "numericId": 11,
+      "displayOrder": 11,
+      "status": "mitigationIdentified",
+      "content": "The server writes the first line of each request to the model (the naming mode) and puts the visitor's text after it on one line with whitespace collapsed, so the text can't pose as that first line. The system prompt tells the model to treat everything after \"Visitor message:\" as data. The naming mode is a two-value enum the server validates.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "A system prompt is a request to the model, not a control. The control is the enum above."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code. The enum is held by a test; the model's obedience to the prompt isn't tested"
+        },
+        {
+          "key": "custom:evidence",
+          "value": ["cdk-blocks/index.ts:750", "cdk-blocks/index.ts:241", "cdk-blocks/shared.ts:29"]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/e2e.test.ts:715 \"agent: the naming mode has to be generic or exact, and the visitor cannot set it from the message\" (npm run test:e2e)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "c13e849a-c21a-5912-ac31-e8f957671eb0",
+      "numericId": 12,
+      "displayOrder": 12,
+      "status": "mitigationIdentified",
+      "content": "The page renders the model's reply and every server value as React text. The source under src/ and index.html has no dangerouslySetInnerHTML, innerHTML, outerHTML, insertAdjacentHTML, document.write, eval or new Function. The pick's reason is fetched and never rendered.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "Held by reading. The scan's semgrep rule packs run in CI and missed four of seven planted defects in an earlier pass, so a clean semgrep run says little."
+        },
+        {
+          "key": "custom:state",
+          "value": "True of the code today. No lint rule or test fails if a sink is added"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "A search of src/ (data files aside) and index.html for the seven sink names returned nothing on 2026-11-20",
+            "src/AgentBox.tsx:162 (the only use of the reason in src/)"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["None in the repository"]
+        }
+      ]
+    },
+    {
+      "id": "ea9ff402-e145-5dc4-8ee3-60534226f0cb",
+      "numericId": 13,
+      "displayOrder": 13,
+      "status": "mitigationIdentified",
+      "content": "Every API input goes through a Zod schema, and stored values are parsed again on the way out. A saved build holds piece ids, a source of hand or agent, a time and the custom Block's standards. It holds no visitor text, so the gallery and its events carry nothing a visitor typed.",
+      "metadata": [
+        {
+          "key": "custom:state",
+          "value": "In the code, held by tests"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/index.ts:377",
+            "cdk-blocks/shared.ts:194",
+            "cdk-blocks/shared.ts:144",
+            "cdk-blocks/shared.ts:177",
+            "cdk-blocks/index.ts:420 (parsed again on read)"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/e2e.test.ts:318 \"save: blocks must come from the seven ids\" (npm run test:e2e)",
+            "test/e2e.test.ts:402 \"read: an unknown id is a 404 and a malformed id is a 400\" (npm run test:e2e)",
+            "test/e2e.test.ts:736 \"proposal: an unknown conversation has none, and a malformed id is refused\" (npm run test:e2e)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "75726fdc-1fac-511c-8054-eb1ec2855498",
+      "numericId": 14,
+      "displayOrder": 14,
+      "status": "mitigationIdentified",
+      "content": "Only the server publishes to the gallery channel, after the invite check. The Realtime block's WebSocket handler accepts subscribe, unsubscribe and ping from a client and nothing else, and a subscription needs a channel token the server issued.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "No test here tries to publish from a client. The token key is new in 1.0: whoever can read that secret can sign a channel token."
+        },
+        {
+          "key": "custom:state",
+          "value": "The app side is in the code. The WebSocket side is the Realtime block's, read in @aws-cdk-blocks/bb-realtime 1.0.0 and not tested here"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/index.ts:407",
+            "cdk-blocks/index.ts:684",
+            "cdk-blocks/index.ts:606",
+            "node_modules/@aws-cdk-blocks/bb-realtime/dist/index.aws.js: the message handler acts on subscribe, unsubscribe and ping, and subscribe calls validateChannelToken with a key read from the Block's own Secrets Manager secret (library code, read on 2026-11-21)",
+            "Synthesized template: a second secret, under the Agent's Realtime at guide/rt/token-secret, with a generated 64-character value; the shared role may read it (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["test/e2e.test.ts:409 \"realtime: a subscriber sees a build saved after it subscribed\" (npm run test:e2e)"]
+        },
+        {
+          "key": "custom:observed",
+          "value": ["deploy-test/REPORT.md, check 16: a save in one browser context appeared in another's gallery with no reload"]
+        }
+      ]
+    },
+    {
+      "id": "926ac23c-f0c2-5b16-8f8b-ad49ebde3556",
+      "numericId": 15,
+      "displayOrder": 15,
+      "status": "mitigationIdentified",
+      "content": "Each agent method that names a conversation first checks that the calling session created it. Session ids and conversation ids are validated as UUIDs. The page makes its session id with crypto.randomUUID and keeps it in sessionStorage for the tab. In CDK Blocks 1.0 the Agent block checks the owner itself as well: the app passes the session as the caller's id to stream, getChannel and getConversation, and the block gives a non-owner no messages and no chunks.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "The session id is a random value the browser picks, not a credential. getProposal takes a conversation id and no session."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code, held by a test"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/index.ts:565",
+            "cdk-blocks/shared.ts:203",
+            "cdk-blocks/index.ts:712",
+            "cdk-blocks/index.ts:774",
+            "node_modules/@aws-cdk-blocks/bb-agent/README.md, Authorization: what each method does for a caller who doesn't own the conversation (library documentation, read on 2026-11-21)",
+            "src/backend.ts:16"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["test/e2e.test.ts:543 \"can't use a conversation it doesn't own\" (npm run test:e2e)"]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, check 18: a valid code with someone else's conversation id drew 404 ConversationNotFoundException"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b3a7ee1d-aba9-5a9f-8672-44bc68e7d0d0",
+      "numericId": 16,
+      "displayOrder": 16,
+      "status": "mitigationIdentified",
+      "content": "The page says that a question and its answer are kept in the deploying account's tables. The app logs a question's length and naming mode, never its text. Nothing about the visitor is stored with presence: no address, name or user agent.",
+      "metadata": [
+        {
+          "key": "custom:state",
+          "value": "In the code, held by a test on the page's wording"
+        },
+        {
+          "key": "custom:evidence",
+          "value": ["src/App.tsx:641", "cdk-blocks/index.ts:745"]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["test/backend.test.ts:700 \"page: it says that agent questions are kept\" (npm run check)"]
+        }
+      ]
+    },
+    {
+      "id": "2f5215b6-4408-584f-a549-cfde4d6f4886",
+      "numericId": 17,
+      "displayOrder": 17,
+      "status": "mitigationIdentified",
+      "content": "All seven S3 buckets block public access and are encrypted. The gallery bucket uses its own KMS key with rotation, versioning, a 30-day expiry and server access logging, through the custom Block. All seven DynamoDB tables have server-side encryption and point-in-time recovery. The alarm topic has its own KMS key.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "Six buckets use S3-managed keys and the tables use AWS-managed keys. No test in the repository reads the template."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the synthesized template and seen on AWS. The gallery bucket's settings are in this repository's code; the rest are CDK Blocks defaults"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "packages/bb-house-bucket/src/index.cdk.ts:41",
+            "packages/bb-house-bucket/src/index.cdk.ts:43",
+            "packages/bb-house-bucket/src/rules.ts:20",
+            "Synthesized template: PublicAccessBlockConfiguration with all four settings on and BucketEncryption on 7 of 7 buckets; SSESpecification and PointInTimeRecoverySpecification on 7 of 7 tables; EnableKeyRotation on both keys (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["None in the repository"]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, README claims table: 7 buckets, all blocking public access, requiring TLS and encrypted (the gallery bucket with its own key, the rest AES256); 7 tables with KMS encryption and point-in-time recovery; 2 keys rotating yearly",
+            "deploy-test/REPORT.md, check 23: the snapshot file was stored with the gallery key"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "8f9f86c5-b2a1-5015-8948-a314f9cbc293",
+      "numericId": 18,
+      "displayOrder": 18,
+      "status": "mitigationIdentified",
+      "content": "npm run destroy removes the tables, the buckets and their contents, the keys and both secrets, so stored questions don't outlive the stack. BASEPLATE_RETAIN_DATA=1 keeps them and turns on deletion protection. The custom Block passes its own removal option to its audit table as the 1.0 KVStore's one protection setting.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "Outside the stack, and left after destroy: log groups Lambda makes for helper functions, the log group Amazon Bedrock AgentCore makes for the runtime (no expiry), and the CDK bootstrap stack's files. The README lists them."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code and in the synthesized template, and seen on AWS on CDK Blocks 1.0.0"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/index.cdk.ts:51",
+            "cdk-blocks/deploy-options.ts:39",
+            "packages/bb-house-bucket/src/index.cdk.ts:52",
+            "Synthesized template: no table, bucket or key and neither secret has a Retain policy, and deletion protection is off on 7 of 7 tables. Five Custom::CDKBucketDeployment resources of the Hosting construct do carry Retain; they hold no data (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)",
+            "README.md:233"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["test/backend.test.ts:115 \"teardown: no Block sets its own removal policy\" (npm run check)"]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, check 25 and 'Leftovers after destroy': npm run destroy ended DELETE_COMPLETE in 4 min 42 s. Tables, buckets, the secret, the distribution, functions, roles and both APIs were gone. Both keys were pending deletion. The five Retain resources were skipped",
+            "deploy-test/REPORT.md, 'Leftovers after destroy': 8 Lambda-made log groups and 1 AgentCore runtime log group stayed",
+            "deploy-test/REPORT.md, check 26: a second deploy would find every fixed name free",
+            "live-deploy/v1/REPORT.md, 1.0 teardown proof: a used 1.0.0 stack was destroyed with npm run destroy. Checked afterwards by name and by physical id: the stack, 7 tables, 7 buckets and 2 secrets were gone, and the 2 KMS keys were pending deletion. The first delete failed on the gallery's access-log bucket, where a late access log had landed, and the command emptied the buckets and finished on its own retry. BASEPLATE_RETAIN_DATA=1 wasn't tried on 1.0.0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1e37f253-9e3b-50d9-99b1-8d13edb39ef5",
+      "numericId": 19,
+      "displayOrder": 19,
+      "status": "mitigationIdentified",
+      "content": "No API method takes a model id, a runtime ARN or any other AWS resource name from the caller. The model is a constant in the Agent's configuration and the runtime is the one the stack creates. The README and the page both say the role is wider than the app needs.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "This limits who can steer the grant. It doesn't narrow the grant."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code. The role itself is written by @aws-cdk-blocks/bb-agent 1.0.0 and isn't narrowed"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/index.ts:217",
+            "README.md:203",
+            "Synthesized template: the role's policy allows bedrock-agentcore:InvokeAgentRuntime on runtime/* in the account and Region, and bedrock:InvokeModel on every foundation model and inference profile (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["test/connections.test.ts:676 \"wildcard grant: the one link the template grants by pattern\" (npm run check)"]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, README claims table: the deployed role's statements matched (runtime/*, foundation-model/*, inference-profile/*)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "90159c66-2e73-5889-937e-c106708480e7",
+      "numericId": 20,
+      "displayOrder": 20,
+      "status": "mitigationIdentified",
+      "content": "Every bucket policy denies requests that aren't over TLS. CloudFront redirects HTTP to HTTPS and reaches the API origin over HTTPS with TLS 1.2 only. API Gateway endpoints are HTTPS and WSS only.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "With the default CloudFront certificate the security policy is fixed at TLSv1, so the distribution accepts TLS 1.0 and later. A custom domain and certificate raise it. The README says so, and the synth prints a warning."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the synthesized template and seen on AWS. These are CDK Blocks and Hosting defaults"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "Synthesized template: a Deny on aws:SecureTransport false in 7 of 7 bucket policies; ViewerProtocolPolicy redirect-to-https on every behavior; OriginProtocolPolicy https-only with TLSv1.2 (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)",
+            "README.md:205"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["None in the repository"]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, check 5: http answered 301 to https",
+            "deploy-test/REPORT.md, README claims table: the distribution accepts TLSv1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3ef89c16-fba0-5737-8208-be3c07361299",
+      "numericId": 21,
+      "displayOrder": 21,
+      "status": "mitigationIdentified",
+      "content": "A refused request is one WARN line with its status, name and reason and no stack trace: a guard turns the CDK Blocks handler's error log into that line for an ApiError with a 4xx status. A scheduled run that fires before the config file is readable is skipped with one WARN line. A WebSocket message from a page that already left is one WARN line, and that connection's records are dropped. So an ERROR line in the function's log group means a fault. The app also logs each save and snapshot, and counts refusals, saves, questions and snapshots as metrics on a CloudWatch dashboard. CloudFront writes access logs to a log bucket, and the gallery bucket has server access logging. Log groups keep a year.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "The logs name a reason, not a caller. API Gateway access logging is off. The guard matches the label that the dispatcher in @aws-cdk-blocks/core 1.0.0 passes to console.error, with or without a request id after it; a test pins the label and both shapes. The skipped-run line wasn't seen on AWS."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code, held by tests, and the refusal lines were seen on AWS"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/index.ts:366",
+            "cdk-blocks/handler-guards.ts:33",
+            "cdk-blocks/handler-guards.ts:42",
+            "cdk-blocks/handler-guards.ts:64",
+            "cdk-blocks/index.handler.ts:8",
+            "cdk-blocks/index.ts:387",
+            "cdk-blocks/index.ts:166",
+            "Synthesized template: the distribution has a Logging bucket; log groups have RetentionInDays 365 (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/backend.test.ts:538 \"logs: a refused request is one warn line with no stack trace, and a fault stays an error\" (npm run check)",
+            "test/backend.test.ts:593 \"logs: a scheduled run before the config is readable is skipped with one warn line\" (npm run check)",
+            "test/backend.test.ts:623 \"logs: the handler installs both guards, the backend throws its refusals as one class\" (npm run check)",
+            "test/backend.test.ts:836 \"logs: a WebSocket message from a page that already left is one warn line\" (npm run check)",
+            "test/backend.test.ts:883 \"logs: the handler installs the closed-connection guard\" (npm run check)"
+          ]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "live-deploy/REPORT-2.md, check 5: 1,732 log events after the deploy held 0 ERROR lines and 8 WARN lines, each one line with no stack trace",
+            "live-deploy/REPORT-3.md, checks 4 and 6: four refusals logged four one-line WARN lines. The same window held one ERROR line, a 410 from a WebSocket post to a closed connection, which is a fault line that a client leaving can cause",
+            "deploy-test/REPORT.md, check 22: before this change, 10 refused requests were ERROR lines and 5 scheduled runs failed with TransientConfigError during the first deploy",
+            "deploy-test/REPORT.md, check 21: the dashboard existed",
+            "live-deploy/v1/REPORT.md, smoke on the live stack: on 1.0.0, after the render, refusal and invite checks and one real agent question, the app's log group held 0 ERROR lines"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4dd3f295-0a19-54fa-a488-2299949fbf06",
+      "numericId": 22,
+      "displayOrder": 22,
+      "status": "mitigationIdentified",
+      "content": "The custom Block checks each write before it stores it: a safe path, a size of at most 2 MB, a content type from a list of four, and bytes that match the type. It then writes one audit entry with the size and SHA-256. Only the scheduled job writes, with a fixed path and label; no API method reaches the bucket.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "The file is stored before the audit entry is written."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code, held by tests"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "packages/bb-house-bucket/src/rules.ts:75",
+            "packages/bb-house-bucket/src/rules.ts:95",
+            "packages/bb-house-bucket/src/runtime.ts:82",
+            "packages/bb-house-bucket/src/runtime.ts:86",
+            "cdk-blocks/index.ts:550"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/e2e.test.ts:644 \"snapshot: the CronJob writes gallery/latest.json through the custom Block and leaves an audit entry\" (npm run test:e2e)",
+            "packages/bb-house-bucket/src/index.test.ts:53 \"a file over the size limit is refused, audited, and not stored\" (npm run check)",
+            "packages/bb-house-bucket/src/index.test.ts:73 \"a content type off the allowlist is refused, audited, and not stored\" (npm run check)"
+          ]
+        },
+        {
+          "key": "custom:observed",
+          "value": ["deploy-test/REPORT.md, check 23: the schedule ran by itself, wrote 3 snapshots, skipped 14, and left 3 audit rows"]
+        }
+      ]
+    },
+    {
+      "id": "7d08687b-1952-563b-b418-0c19cdd55b1e",
+      "numericId": 23,
+      "displayOrder": 23,
+      "status": "mitigationIdentified",
+      "content": "Every dependency is pinned to an exact version with a lockfile, and CI installs with npm ci. Each package.json names what its code imports: the backend workspace names @aws-sdk/client-s3 and the root names playwright as a dev dependency. The scan runs semgrep, betterleaks over the history and over every file git tracks or would track, osv-scanner, trivy and a license allowlist. Dependabot opens grouped weekly updates with a 7-day cooldown. The workflow pins each action to a commit and grants read-only contents. The scan also runs npm audit, which fails on an advisory rated high or worse and sees copies bundled inside other packages, and a check that every production package the lockfile installs has its license text in THIRD-PARTY-LICENSES, peers and bundled copies included.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "The scan is the check; it passed locally on this branch on 2026-11-22, with no ignored advisory. The tree scan for secrets leaves out folders that .gitignore names, such as build output. CI gets its Chromium from Playwright's installer, which the lockfile doesn't cover by hash. The workflow has never run."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the repository. The workflow has never run on GitHub"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "package.json:66 (exact versions)",
+            "scripts/scan.sh:65",
+            ".github/workflows/ci.yml:11",
+            ".github/workflows/ci.yml:32",
+            ".github/dependabot.yml:9",
+            "cdk-blocks/package.json:8",
+            "package.json:95",
+            "scripts/scan.sh:43 (the secrets scan of the tree)",
+            ".github/workflows/ci.yml:40",
+            "scripts/scan.sh:71",
+            "scripts/scan.sh:70",
+            "scripts/third-party-licenses.mjs:37"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/backend.test.ts:909 \"licenses: every production package the lockfile installs is in the third-party file\" (npm run check)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401861ea-6606-5fbb-b8c7-505d675f22b9",
+      "numericId": 24,
+      "displayOrder": 24,
+      "status": "mitigationIdentified",
+      "content": "The custom Block resolves only from this repository: the root depends on it as file:packages/bb-house-bucket, the lockfile entry is a link, and the package is private. npm ci can't fetch that name from a registry, so a package registered under the scope later can't enter this install.",
+      "metadata": [
+        {
+          "key": "custom:state",
+          "value": "In the repository, held by a test"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "package.json:70",
+            "package-lock.json:5055 (resolved packages/bb-house-bucket, link true)",
+            "packages/bb-house-bucket/package.json:48"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["test/backend.test.ts:688 \"package: the custom Block is a file dependency\" (npm run check)"]
+        }
+      ]
+    },
+    {
+      "id": "13aa7a69-1068-5a8e-af78-7d1b0b9f3082",
+      "numericId": 25,
+      "displayOrder": 25,
+      "status": "mitigationIdentified",
+      "content": "The invite code is generated at deploy and read from Secrets Manager; it's never in source. The invite link carries it in the URL fragment, which a browser doesn't send to a server; the page reads it once, removes it from the address bar and keeps it in sessionStorage. API calls send it in a POST body. .gitignore covers the local code file, .env files and key material, and betterleaks scans the tree and the history.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "The deployed handler in @aws-cdk-blocks/core 1.0.0 logs errors, not call arguments (library code, read on 2026-11-21)."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code. The fragment handling has no test in the repository"
+        },
+        {
+          "key": "custom:evidence",
+          "value": ["cdk-blocks/index.ts:336", "src/backend.ts:26", "src/backend.ts:29", ".gitignore:36", "scripts/scan.sh:63"]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["None in the repository"]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, check 11: the fragment was gone from the address bar and the code wasn't in the page",
+            "deploy-test/REPORT.md, check 24 and 'One thing to know about the invite code': a tester's command printed the code once; the documented put-secret-value command replaced it, and the old code was refused within 50 seconds",
+            "live-deploy/REPORT-2.md, 'The invite': a search of that run's logs and evidence found no code"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fbc6ee8e-7623-59a1-a4fe-fb2aa4d0c03a",
+      "numericId": 26,
+      "displayOrder": 26,
+      "status": "mitigationIdentified",
+      "content": "The API allows cross-origin calls only from the site's own origin: the handler in @aws-cdk-blocks/core rejects a request whose Origin header isn't on the allowlist, and the production preset's list is empty apart from the Hosting origin. The API uses no cookies, so a cross-site request carries no credential. CloudFront adds the AWS managed security headers policy to every behavior: HSTS, nosniff, same-origin framing and a referrer policy.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "A request with no Origin header, such as one from a script, isn't affected by the allowlist. There's no Content-Security-Policy header."
+        },
+        {
+          "key": "custom:state",
+          "value": "CDK Blocks and Hosting defaults, read in the library and the synthesized template. The headers were seen on AWS"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/index.cdk.ts:50",
+            "node_modules/@aws-cdk-blocks/core/dist/cors.js and dispatch.js: isOriginAllowed and corsRejection (library code, read on 2026-11-21)",
+            "Synthesized template: the function's environment sets CORS_HOSTING_ORIGINS and no CORS_ALLOWED_ORIGINS (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)",
+            "Synthesized template: ResponseHeadersPolicyId 67f7725c-6f97-4210-82d7-5512b31e9d03, the managed SecurityHeadersPolicy, on all 8 behaviors: the default one, six under /cdk-blocks/ and the /aws-blocks/* alias (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["None in the repository"]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "deploy-test/REPORT.md, check 5: the site answered with strict-transport-security, x-content-type-options nosniff, x-frame-options SAMEORIGIN and referrer-policy strict-origin-when-cross-origin, and with no Content-Security-Policy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d363821f-704d-57f0-9e90-b438416c530f",
+      "numericId": 27,
+      "displayOrder": 27,
+      "status": "mitigationIdentified",
+      "content": "A browser with no WebGPU or WebGL gets a full text page, and a scene that fails while rendering is replaced by the same page. With reduced motion on, the scene draws on demand. Shadow textures and link materials are freed on unmount.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "One browser test is in the repository, for text contrast. It doesn't cover these fallbacks."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code, partly held by a test"
+        },
+        {
+          "key": "custom:evidence",
+          "value": ["src/App.tsx:683", "src/App.tsx:710", "src/scene/Stage.tsx:419"]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["test/backend.test.ts:708 \"scene: the shadow textures and link materials are freed on unmount\" (npm run check)"]
+        }
+      ]
+    },
+    {
+      "id": "34bec237-544f-5e8e-959e-74122bb04fb9",
+      "numericId": 28,
+      "displayOrder": 28,
+      "status": "mitigationIdentified",
+      "content": "When a read of the invite code is denied, finds no such secret or finds no value, the backend reads the deployed config file again, takes the secret's current address and reads once more. The config is read again at most once in ten seconds. A fault that a new address doesn't explain is thrown as it came, and a missing value is never cached. A read that fails refuses the request; it never lets one through.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "The cause is in CDK Blocks: a function copy loads the config file once and keeps it. The fix here covers the invite secret only."
+        },
+        {
+          "key": "custom:state",
+          "value": "In the code, held by tests that run the Secret Block's deployed class with Secrets Manager replaced. Not exercised on AWS"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "cdk-blocks/fresh-secret.ts:96",
+            "cdk-blocks/fresh-secret.ts:54",
+            "cdk-blocks/fresh-secret.ts:58",
+            "cdk-blocks/index.ts:340",
+            "cdk-blocks/index.ts:358",
+            "README.md:140"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": [
+            "test/backend.test.ts:390 \"secret: a warm copy that holds the old address reads the new one after a deploy replaces the secret\" (npm run check)",
+            "test/backend.test.ts:429 \"secret: a denied read that a fresh address does not explain is thrown\" (npm run check)",
+            "test/backend.test.ts:486 \"secret: a missing value is never cached\" (npm run check)",
+            "test/backend.test.ts:514 \"secret: the backend reads the invite code through the fresh reader only\" (npm run check)"
+          ]
+        },
+        {
+          "key": "custom:observed",
+          "value": [
+            "live-deploy/REPORT.md, 'What differed from the fix report', item 1: the fault this answers. A deploy replaced the secret, one warm copy kept the old address, and invite-gated calls on it failed for about five minutes until the copies were restarted by hand",
+            "live-deploy/REPORT-2.md, check 7: the retry wasn't exercised on AWS, because that deploy replaced no secret"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4b035f5d-e384-5484-a850-be3ae01d5bdc",
+      "numericId": 29,
+      "displayOrder": 29,
+      "status": "mitigationIdentified",
+      "content": "CDK Blocks registers three GET routes in the deployed function: /cdk-blocks/dashboard, /cdk-blocks/resources and /cdk-blocks/settings, also reachable under /aws-blocks/. Each answers with a redirect to a page of the AWS console, which needs the deployer's own sign-in to show anything. The routes return no data from the stack and take no input.",
+      "metadata": [
+        {
+          "key": "Comments",
+          "value": "The app can't switch these routes off. Nothing in the repository calls them."
+        },
+        {
+          "key": "custom:state",
+          "value": "CDK Blocks defaults, read in the library and the synthesized template. Not tested here. The dashboard route's redirect was seen on AWS once"
+        },
+        {
+          "key": "custom:evidence",
+          "value": [
+            "node_modules/@aws-cdk-blocks/core/dist/builtin-routes.js: /cdk-blocks/resources and /cdk-blocks/settings answer 302 with the address in BB_RESOURCES_GROUP_URL and BB_SETTINGS_GROUP_URL, and lambda-handler.js registers them (library code, read on 2026-11-21)",
+            "node_modules/@aws-cdk-blocks/bb-dashboard/dist/routes.js: /cdk-blocks/dashboard answers 302 with the address in BB_DASHBOARD_URL (library code, read on 2026-11-21)",
+            "Synthesized template: the three addresses are console URLs built from the Region and the stack name, for example the dashboard named after the stack; none holds an account id (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)",
+            "cdk-blocks/index.ts:166"
+          ]
+        },
+        {
+          "key": "custom:tests",
+          "value": ["None in the repository"]
+        }
+      ]
+    }
+  ],
+  "assumptionLinks": [
+    {
+      "type": "Threat",
+      "assumptionId": "e2fae150-5ab0-5867-abcd-84a5a215d8f6",
+      "linkedId": "621be2f6-83ee-5b88-b292-1d7d2d339902"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "e2fae150-5ab0-5867-abcd-84a5a215d8f6",
+      "linkedId": "9c604733-e81e-5b7c-98a9-4f2912933dda"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "e2fae150-5ab0-5867-abcd-84a5a215d8f6",
+      "linkedId": "89ecfe76-627e-5f47-83ca-6cd1ee1c65a6"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "6a347bd8-6c47-588b-9233-de400f575fda",
+      "linkedId": "dba43cbe-4c50-5953-b8e2-c8a324f13ee2"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "6a347bd8-6c47-588b-9233-de400f575fda",
+      "linkedId": "4bfe1473-c6f7-5864-8ce5-451bf8c2f706"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "6a347bd8-6c47-588b-9233-de400f575fda",
+      "linkedId": "203a1ea1-032d-5118-b60e-db4aa30aa86c"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "9fe90265-515c-5ef9-b039-f99847921ec6",
+      "linkedId": "3254d7d6-bb07-516d-82f2-abc15922d0e3"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "9fe90265-515c-5ef9-b039-f99847921ec6",
+      "linkedId": "b3f05db2-f841-51c4-9ea7-627d2fc0e6f5"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "9fe90265-515c-5ef9-b039-f99847921ec6",
+      "linkedId": "4afe9441-e9cc-535a-9c3a-cdd03f3fd9d2"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "dc8fd429-798a-5fd0-81db-e9b46cfcedc6",
+      "linkedId": "7849df37-c056-5360-b138-4b03b7be32a1"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "dc8fd429-798a-5fd0-81db-e9b46cfcedc6",
+      "linkedId": "dba43cbe-4c50-5953-b8e2-c8a324f13ee2"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "712da304-7631-5c22-b336-f4d476deed74",
+      "linkedId": "71362900-aea0-56d9-af5f-774d158fa71b"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "712da304-7631-5c22-b336-f4d476deed74",
+      "linkedId": "89ecfe76-627e-5f47-83ca-6cd1ee1c65a6"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "712da304-7631-5c22-b336-f4d476deed74",
+      "linkedId": "3d8a6426-da34-5131-9a4e-68e6f7ae60ad"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "712da304-7631-5c22-b336-f4d476deed74",
+      "linkedId": "f40e382b-cff6-53c8-814d-001f2dd9a7e8"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "712da304-7631-5c22-b336-f4d476deed74",
+      "linkedId": "9b250b89-aa3b-5edf-8ed6-866a72efe57c"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "38b452c9-9c9e-5102-9c5e-7e431c54c18a",
+      "linkedId": "621be2f6-83ee-5b88-b292-1d7d2d339902"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "38b452c9-9c9e-5102-9c5e-7e431c54c18a",
+      "linkedId": "9c604733-e81e-5b7c-98a9-4f2912933dda"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "38b452c9-9c9e-5102-9c5e-7e431c54c18a",
+      "linkedId": "9478b144-dd98-546d-9441-168bb97df67b"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "ae04a676-9c62-58d8-88a8-2b7b4597064b",
+      "linkedId": "dba43cbe-4c50-5953-b8e2-c8a324f13ee2"
+    },
+    {
+      "type": "Threat",
+      "assumptionId": "aa61ba04-bbc4-5474-a9d3-acffd27bde17",
+      "linkedId": "9c604733-e81e-5b7c-98a9-4f2912933dda"
+    }
+  ],
+  "mitigationLinks": [
+    {
+      "mitigationId": "743ed9eb-aab7-5a3d-8177-0351012fbe19",
+      "linkedId": "3254d7d6-bb07-516d-82f2-abc15922d0e3"
+    },
+    {
+      "mitigationId": "ea9ff402-e145-5dc4-8ee3-60534226f0cb",
+      "linkedId": "3254d7d6-bb07-516d-82f2-abc15922d0e3"
+    },
+    {
+      "mitigationId": "67bf15c6-19e8-5d58-a52f-663a26e41f4a",
+      "linkedId": "b3f05db2-f841-51c4-9ea7-627d2fc0e6f5"
+    },
+    {
+      "mitigationId": "7c19a922-faeb-5b70-8946-a055fccd9e7d",
+      "linkedId": "b3f05db2-f841-51c4-9ea7-627d2fc0e6f5"
+    },
+    {
+      "mitigationId": "5e25a03b-a4e8-5431-b39e-7ce9a71e7fe8",
+      "linkedId": "4afe9441-e9cc-535a-9c3a-cdd03f3fd9d2"
+    },
+    {
+      "mitigationId": "13aa7a69-1068-5a8e-af78-7d1b0b9f3082",
+      "linkedId": "4afe9441-e9cc-535a-9c3a-cdd03f3fd9d2"
+    },
+    {
+      "mitigationId": "7c19a922-faeb-5b70-8946-a055fccd9e7d",
+      "linkedId": "621be2f6-83ee-5b88-b292-1d7d2d339902"
+    },
+    {
+      "mitigationId": "8524b6f5-8d79-56bb-bd4c-37ea795715d0",
+      "linkedId": "621be2f6-83ee-5b88-b292-1d7d2d339902"
+    },
+    {
+      "mitigationId": "ef756ef3-88d4-5dd2-8751-b9a2ac121208",
+      "linkedId": "621be2f6-83ee-5b88-b292-1d7d2d339902"
+    },
+    {
+      "mitigationId": "253fdf91-f3c9-52ef-aaaa-81f386613284",
+      "linkedId": "621be2f6-83ee-5b88-b292-1d7d2d339902"
+    },
+    {
+      "mitigationId": "5e25a03b-a4e8-5431-b39e-7ce9a71e7fe8",
+      "linkedId": "9c604733-e81e-5b7c-98a9-4f2912933dda"
+    },
+    {
+      "mitigationId": "142824cc-cf0d-56fe-adba-ac41a06992f7",
+      "linkedId": "9c604733-e81e-5b7c-98a9-4f2912933dda"
+    },
+    {
+      "mitigationId": "8524b6f5-8d79-56bb-bd4c-37ea795715d0",
+      "linkedId": "9c604733-e81e-5b7c-98a9-4f2912933dda"
+    },
+    {
+      "mitigationId": "5e25a03b-a4e8-5431-b39e-7ce9a71e7fe8",
+      "linkedId": "062c4391-096e-5b40-a6d3-5303c048316c"
+    },
+    {
+      "mitigationId": "4108a656-a17d-5496-80ad-a519e20689db",
+      "linkedId": "062c4391-096e-5b40-a6d3-5303c048316c"
+    },
+    {
+      "mitigationId": "8f9f86c5-b2a1-5015-8948-a314f9cbc293",
+      "linkedId": "062c4391-096e-5b40-a6d3-5303c048316c"
+    },
+    {
+      "mitigationId": "354de467-8940-5dd5-b887-7779d0b36fed",
+      "linkedId": "9478b144-dd98-546d-9441-168bb97df67b"
+    },
+    {
+      "mitigationId": "7129f55a-aa5a-5766-b5b9-ef1f5081139f",
+      "linkedId": "9478b144-dd98-546d-9441-168bb97df67b"
+    },
+    {
+      "mitigationId": "c13e849a-c21a-5912-ac31-e8f957671eb0",
+      "linkedId": "9478b144-dd98-546d-9441-168bb97df67b"
+    },
+    {
+      "mitigationId": "142824cc-cf0d-56fe-adba-ac41a06992f7",
+      "linkedId": "9478b144-dd98-546d-9441-168bb97df67b"
+    },
+    {
+      "mitigationId": "ea9ff402-e145-5dc4-8ee3-60534226f0cb",
+      "linkedId": "51dfbbd8-1ef9-5deb-b1fd-6fab4c7fd4c0"
+    },
+    {
+      "mitigationId": "c13e849a-c21a-5912-ac31-e8f957671eb0",
+      "linkedId": "51dfbbd8-1ef9-5deb-b1fd-6fab4c7fd4c0"
+    },
+    {
+      "mitigationId": "75726fdc-1fac-511c-8054-eb1ec2855498",
+      "linkedId": "51dfbbd8-1ef9-5deb-b1fd-6fab4c7fd4c0"
+    },
+    {
+      "mitigationId": "75726fdc-1fac-511c-8054-eb1ec2855498",
+      "linkedId": "71362900-aea0-56d9-af5f-774d158fa71b"
+    },
+    {
+      "mitigationId": "ea9ff402-e145-5dc4-8ee3-60534226f0cb",
+      "linkedId": "71362900-aea0-56d9-af5f-774d158fa71b"
+    },
+    {
+      "mitigationId": "926ac23c-f0c2-5b16-8f8b-ad49ebde3556",
+      "linkedId": "7849df37-c056-5360-b138-4b03b7be32a1"
+    },
+    {
+      "mitigationId": "743ed9eb-aab7-5a3d-8177-0351012fbe19",
+      "linkedId": "7849df37-c056-5360-b138-4b03b7be32a1"
+    },
+    {
+      "mitigationId": "b3a7ee1d-aba9-5a9f-8672-44bc68e7d0d0",
+      "linkedId": "dba43cbe-4c50-5953-b8e2-c8a324f13ee2"
+    },
+    {
+      "mitigationId": "2f5215b6-4408-584f-a549-cfde4d6f4886",
+      "linkedId": "dba43cbe-4c50-5953-b8e2-c8a324f13ee2"
+    },
+    {
+      "mitigationId": "8f9f86c5-b2a1-5015-8948-a314f9cbc293",
+      "linkedId": "dba43cbe-4c50-5953-b8e2-c8a324f13ee2"
+    },
+    {
+      "mitigationId": "1e37f253-9e3b-50d9-99b1-8d13edb39ef5",
+      "linkedId": "89ecfe76-627e-5f47-83ca-6cd1ee1c65a6"
+    },
+    {
+      "mitigationId": "7d08687b-1952-563b-b418-0c19cdd55b1e",
+      "linkedId": "89ecfe76-627e-5f47-83ca-6cd1ee1c65a6"
+    },
+    {
+      "mitigationId": "2f5215b6-4408-584f-a549-cfde4d6f4886",
+      "linkedId": "4bfe1473-c6f7-5864-8ce5-451bf8c2f706"
+    },
+    {
+      "mitigationId": "90159c66-2e73-5889-937e-c106708480e7",
+      "linkedId": "4bfe1473-c6f7-5864-8ce5-451bf8c2f706"
+    },
+    {
+      "mitigationId": "3ef89c16-fba0-5737-8208-be3c07361299",
+      "linkedId": "203a1ea1-032d-5118-b60e-db4aa30aa86c"
+    },
+    {
+      "mitigationId": "8524b6f5-8d79-56bb-bd4c-37ea795715d0",
+      "linkedId": "203a1ea1-032d-5118-b60e-db4aa30aa86c"
+    },
+    {
+      "mitigationId": "4dd3f295-0a19-54fa-a488-2299949fbf06",
+      "linkedId": "3b229cc6-4c1c-5169-a8d8-131d9692efca"
+    },
+    {
+      "mitigationId": "253fdf91-f3c9-52ef-aaaa-81f386613284",
+      "linkedId": "73b7c752-c2ca-5470-be37-ba8c8af07b12"
+    },
+    {
+      "mitigationId": "7c19a922-faeb-5b70-8946-a055fccd9e7d",
+      "linkedId": "73b7c752-c2ca-5470-be37-ba8c8af07b12"
+    },
+    {
+      "mitigationId": "7d08687b-1952-563b-b418-0c19cdd55b1e",
+      "linkedId": "040e61f8-277a-5ca6-99bb-71090a612e65"
+    },
+    {
+      "mitigationId": "401861ea-6606-5fbb-b8c7-505d675f22b9",
+      "linkedId": "040e61f8-277a-5ca6-99bb-71090a612e65"
+    },
+    {
+      "mitigationId": "401861ea-6606-5fbb-b8c7-505d675f22b9",
+      "linkedId": "8c2f262b-2800-5aca-87f6-ced6a4a4f669"
+    },
+    {
+      "mitigationId": "13aa7a69-1068-5a8e-af78-7d1b0b9f3082",
+      "linkedId": "84983736-e7d3-54aa-a868-1bdde446ea57"
+    },
+    {
+      "mitigationId": "67bf15c6-19e8-5d58-a52f-663a26e41f4a",
+      "linkedId": "84983736-e7d3-54aa-a868-1bdde446ea57"
+    },
+    {
+      "mitigationId": "fbc6ee8e-7623-59a1-a4fe-fb2aa4d0c03a",
+      "linkedId": "3d8a6426-da34-5131-9a4e-68e6f7ae60ad"
+    },
+    {
+      "mitigationId": "c13e849a-c21a-5912-ac31-e8f957671eb0",
+      "linkedId": "3d8a6426-da34-5131-9a4e-68e6f7ae60ad"
+    },
+    {
+      "mitigationId": "d363821f-704d-57f0-9e90-b438416c530f",
+      "linkedId": "8a2b1c83-0065-55d1-89e9-b0f19c6b28d8"
+    },
+    {
+      "mitigationId": "34bec237-544f-5e8e-959e-74122bb04fb9",
+      "linkedId": "f40e382b-cff6-53c8-814d-001f2dd9a7e8"
+    },
+    {
+      "mitigationId": "3ef89c16-fba0-5737-8208-be3c07361299",
+      "linkedId": "f40e382b-cff6-53c8-814d-001f2dd9a7e8"
+    },
+    {
+      "mitigationId": "4b035f5d-e384-5484-a850-be3ae01d5bdc",
+      "linkedId": "9b250b89-aa3b-5edf-8ed6-866a72efe57c"
+    }
+  ],
+  "threats": [
+    {
+      "id": "3254d7d6-bb07-516d-82f2-abc15922d0e3",
+      "numericId": 1,
+      "displayOrder": 1,
+      "status": "threatIdentified",
+      "tags": ["boundary:invite"],
+      "threatSource": "internet actor",
+      "prerequisites": "who has the site or API address and no invite code",
+      "threatAction": "call saveBuild or an agent method directly on the API",
+      "threatImpact": "writes to the gallery and model calls the deployer pays for",
+      "impactedGoal": ["integrity", "availability"],
+      "impactedAssets": ["the gallery", "the deployer's bill"],
+      "statement": "An internet actor who has the site or API address and no invite code can call saveBuild or an agent method directly on the API, which leads to writes to the gallery and model calls the deployer pays for, negatively impacting the gallery and the deployer's bill",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["S"]
+        },
+        {
+          "key": "Priority",
+          "value": "High"
+        },
+        {
+          "key": "custom:residual",
+          "value": "None found. The API has no authorizer by design, so this check in the handler is the only gate."
+        }
+      ]
+    },
+    {
+      "id": "b3f05db2-f841-51c4-9ea7-627d2fc0e6f5",
+      "numericId": 2,
+      "displayOrder": 2,
+      "status": "threatIdentified",
+      "tags": ["boundary:invite"],
+      "threatSource": "internet actor",
+      "prerequisites": "who can call checkInvite or heartbeat as often as the throttle allows",
+      "threatAction": "guess the invite code, or learn it from how long a comparison takes",
+      "threatImpact": "the same access as an invited visitor",
+      "impactedGoal": ["confidentiality"],
+      "impactedAssets": ["the invite code"],
+      "statement": "An internet actor who can call checkInvite or heartbeat as often as the throttle allows can guess the invite code, or learn it from how long a comparison takes, which leads to the same access as an invited visitor, negatively impacting the invite code",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["S"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "There's no attempt limit or lockout. That matters only if a deployer replaces the generated code with a short one. cdk-nag reports the secret has no automatic rotation (SMG4); the deployer rotates it by hand."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["F2"]
+        }
+      ]
+    },
+    {
+      "id": "4afe9441-e9cc-535a-9c3a-cdd03f3fd9d2",
+      "numericId": 3,
+      "displayOrder": 3,
+      "status": "threatIdentified",
+      "tags": ["boundary:invite"],
+      "threatSource": "invited visitor",
+      "prerequisites": "who holds the one shared invite code, or anyone the link was forwarded to",
+      "threatAction": "spend the whole day's saves and questions, fill the recent strip, and do it without being told apart from other holders",
+      "threatImpact": "no saving or asking for other visitors until the next UTC day, with no record of who did it",
+      "impactedGoal": ["availability", "accountability"],
+      "impactedAssets": ["the gallery", "the agent's daily budget"],
+      "statement": "An invited visitor who holds the one shared invite code, or anyone the link was forwarded to can spend the whole day's saves and questions, fill the recent strip, and do it without being told apart from other holders, which leads to no saving or asking for other visitors until the next UTC day, with no record of who did it, negatively impacting the gallery and the agent's daily budget",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["S", "R"]
+        },
+        {
+          "key": "Priority",
+          "value": "Medium"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A residual risk to accept, by design. One shared code isn't a sign-in, and the per-page limit keys on an id the browser picks. The README says so and documents rotation. The old code keeps working for up to five minutes after a change because the backend caches it; in the test deploy it was refused within 50 seconds."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["F2"]
+        }
+      ]
+    },
+    {
+      "id": "621be2f6-83ee-5b88-b292-1d7d2d339902",
+      "numericId": 4,
+      "displayOrder": 4,
+      "status": "threatIdentified",
+      "tags": ["boundary:api"],
+      "threatSource": "internet actor",
+      "prerequisites": "who has the site or API address",
+      "threatAction": "send open API calls in a loop at the throttle limit",
+      "threatImpact": "errors for real visitors while it lasts, and request charges in the deployer's account",
+      "impactedGoal": ["availability"],
+      "impactedAssets": ["the API", "the deployer's bill"],
+      "statement": "An internet actor who has the site or API address can send open API calls in a loop at the throttle limit, which leads to errors for real visitors while it lasts, and request charges in the deployer's account, negatively impacting the API and the deployer's bill",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["D"]
+        },
+        {
+          "key": "Priority",
+          "value": "High"
+        },
+        {
+          "key": "custom:residual",
+          "value": "Open. The throttle is shared, so one script can use all of it, and a burst of up to 50 passes whole. By default there's no limit for each client address and nobody is subscribed to the alarm. Nothing caps spend. Estimate, not measured: 10 to 15 US dollars a day at a sustained 25 requests a second."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["B7"]
+        }
+      ]
+    },
+    {
+      "id": "9c604733-e81e-5b7c-98a9-4f2912933dda",
+      "numericId": 5,
+      "displayOrder": 5,
+      "status": "threatIdentified",
+      "tags": ["boundary:model"],
+      "threatSource": "invited visitor",
+      "prerequisites": "who holds the invite code",
+      "threatAction": "ask the agent as many questions as the budgets allow, every day",
+      "threatImpact": "model charges in the deployer's account up to the daily cap",
+      "impactedGoal": ["availability"],
+      "impactedAssets": ["the deployer's bill"],
+      "statement": "An invited visitor who holds the invite code can ask the agent as many questions as the budgets allow, every day, which leads to model charges in the deployer's account up to the daily cap, negatively impacting the deployer's bill",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["D"]
+        },
+        {
+          "key": "Priority",
+          "value": "Medium"
+        },
+        {
+          "key": "custom:residual",
+          "value": "Bounded, not removed. Estimate from the README, not measured on a bill: about 0.60 US dollars a day in model charges if the cap of 200 questions is reached and every call uses its whole output allowance, at Claude Haiku 5.5's price on 2026-11-20. No test in the repository calls a real model. The test deploys made a handful of real calls and didn't push the token or call limits. The model can also decline a question under its provider's safety rules; the visitor then gets no pick and the question is still counted. AgentCore runtime time for each question isn't in the estimate."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["B7", "F7"]
+        }
+      ]
+    },
+    {
+      "id": "062c4391-096e-5b40-a6d3-5303c048316c",
+      "numericId": 6,
+      "displayOrder": 6,
+      "status": "threatIdentified",
+      "tags": ["boundary:stores"],
+      "threatSource": "invited visitor",
+      "prerequisites": "who holds the invite code",
+      "threatAction": "save builds and start conversations up to the daily budgets, day after day",
+      "threatImpact": "tables that grow slowly and never shrink",
+      "impactedGoal": ["availability"],
+      "impactedAssets": ["the builds table", "the conversation and message tables"],
+      "statement": "An invited visitor who holds the invite code can save builds and start conversations up to the daily budgets, day after day, which leads to tables that grow slowly and never shrink, negatively impacting the builds table and the conversation and message tables",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["D"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A residual risk to accept. Saved builds have no expiry because share links are meant to last. The Agent block has no retention option for conversations and messages. Growth is at most 500 small items and 1,000 conversations a day."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["F1", "F11", "F14"]
+        }
+      ]
+    },
+    {
+      "id": "9478b144-dd98-546d-9441-168bb97df67b",
+      "numericId": 7,
+      "displayOrder": 7,
+      "status": "threatIdentified",
+      "tags": ["boundary:model"],
+      "threatSource": "invited visitor",
+      "prerequisites": "who holds the invite code and writes instructions into the question box",
+      "threatAction": "steer the model to put text, markup, an invented piece or a false resource count on the page or in the gallery",
+      "threatImpact": "content on the page that the app's data doesn't back",
+      "impactedGoal": ["integrity"],
+      "impactedAssets": ["the page", "the gallery"],
+      "statement": "An invited visitor who holds the invite code and writes instructions into the question box can steer the model to put text, markup, an invented piece or a false resource count on the page or in the gallery, which leads to content on the page that the app's data doesn't back, negatively impacting the page and the gallery",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["T", "E"]
+        },
+        {
+          "key": "Priority",
+          "value": "Medium"
+        },
+        {
+          "key": "custom:residual",
+          "value": "The model's reply text is shown to the asker only, as text, so a steered reply can mislead the person who wrote the prompt. No test runs a real model, and the real calls in the test deploys carried no injection. The Agent block wraps tool output as untrusted data only for tools flagged untrustedOutput, and this app flags none; its tools return server-written text."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["F7"]
+        }
+      ]
+    },
+    {
+      "id": "51dfbbd8-1ef9-5deb-b1fd-6fab4c7fd4c0",
+      "numericId": 8,
+      "displayOrder": 8,
+      "status": "threatIdentified",
+      "tags": ["boundary:browser"],
+      "threatSource": "invited visitor",
+      "prerequisites": "who holds the invite code",
+      "threatAction": "store a value that the page renders as markup or script for other visitors",
+      "threatImpact": "script running in another visitor's browser, with access to that tab's invite code",
+      "impactedGoal": ["integrity", "confidentiality"],
+      "impactedAssets": ["other visitors' browsers", "the invite code"],
+      "statement": "An invited visitor who holds the invite code can store a value that the page renders as markup or script for other visitors, which leads to script running in another visitor's browser, with access to that tab's invite code, negatively impacting other visitors' browsers and the invite code",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["T", "I"]
+        },
+        {
+          "key": "Priority",
+          "value": "Medium"
+        },
+        {
+          "key": "custom:residual",
+          "value": "None found. A saved build and a gallery event carry no visitor text. Nothing in CI fails if someone adds an HTML sink later."
+        }
+      ]
+    },
+    {
+      "id": "71362900-aea0-56d9-af5f-774d158fa71b",
+      "numericId": 9,
+      "displayOrder": 9,
+      "status": "threatIdentified",
+      "tags": ["boundary:websocket"],
+      "threatSource": "internet actor",
+      "prerequisites": "who has the WebSocket address and a gallery channel token, which joinGallery gives to anyone",
+      "threatAction": "publish a forged build, presence or featured event to every open page",
+      "threatImpact": "a gallery that shows builds or counts the server never produced",
+      "impactedGoal": ["integrity"],
+      "impactedAssets": ["the gallery channel"],
+      "statement": "An internet actor who has the WebSocket address and a gallery channel token, which joinGallery gives to anyone can publish a forged build, presence or featured event to every open page, which leads to a gallery that shows builds or counts the server never produced, negatively impacting the gallery channel",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["S", "T"]
+        },
+        {
+          "key": "Priority",
+          "value": "Medium"
+        },
+        {
+          "key": "custom:residual",
+          "value": "Rests on the Realtime block's handler and token check, which this repository reads but doesn't test."
+        }
+      ]
+    },
+    {
+      "id": "7849df37-c056-5360-b138-4b03b7be32a1",
+      "numericId": 10,
+      "displayOrder": 10,
+      "status": "threatIdentified",
+      "tags": ["boundary:invite"],
+      "threatSource": "invited visitor",
+      "prerequisites": "who learns another page's session id and conversation id",
+      "threatAction": "read that conversation's messages, or read its pick through getProposal with the conversation id alone",
+      "threatImpact": "another visitor's question and the agent's answer being disclosed",
+      "impactedGoal": ["confidentiality"],
+      "impactedAssets": ["agent conversations"],
+      "statement": "An invited visitor who learns another page's session id and conversation id can read that conversation's messages, or read its pick through getProposal with the conversation id alone, which leads to another visitor's question and the agent's answer being disclosed, negatively impacting agent conversations",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["I"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A residual risk to accept. Both ids are random UUIDs that stay in the visitor's tab, so the actor has to obtain them some other way. getProposal is open and returns piece ids and a reason of at most 200 characters that the model wrote."
+        }
+      ]
+    },
+    {
+      "id": "dba43cbe-4c50-5953-b8e2-c8a324f13ee2",
+      "numericId": 11,
+      "displayOrder": 11,
+      "status": "threatIdentified",
+      "tags": ["boundary:stores"],
+      "threatSource": "person with read access to the deployer's account",
+      "prerequisites": "or to a table left behind after teardown",
+      "threatAction": "read the questions visitors asked the agent",
+      "threatImpact": "disclosure of free text that a visitor may have put personal details into",
+      "impactedGoal": ["confidentiality"],
+      "impactedAssets": ["the message table"],
+      "statement": "A person with read access to the deployer's account or to a table left behind after teardown can read the questions visitors asked the agent, which leads to disclosure of free text that a visitor may have put personal details into, negatively impacting the message table",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["I"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A residual risk to accept. Questions are kept with no expiry while the stack exists. The page says so. A deployer who sets BASEPLATE_RETAIN_DATA=1 keeps them after destroy. The log group Amazon Bedrock AgentCore makes for the runtime stays after destroy with no expiry. The modeler didn't read what the runtime writes there, so whether it holds question text is unknown."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["F14", "B6"]
+        }
+      ]
+    },
+    {
+      "id": "89ecfe76-627e-5f47-83ca-6cd1ee1c65a6",
+      "numericId": 12,
+      "displayOrder": 12,
+      "status": "threatIdentified",
+      "tags": ["boundary:account"],
+      "threatSource": "actor",
+      "prerequisites": "who gets code to run inside the function, through a dependency or a bug",
+      "threatAction": "use the stack's one role to invoke any AgentCore runtime in the account and Region, or any Bedrock model",
+      "threatImpact": "access to other agents in the account and model spend outside this app",
+      "impactedGoal": ["confidentiality", "availability"],
+      "impactedAssets": ["other workloads in the deployer's account", "the deployer's bill"],
+      "statement": "An actor who gets code to run inside the function, through a dependency or a bug can use the stack's one role to invoke any AgentCore runtime in the account and Region, or any Bedrock model, which leads to access to other agents in the account and model spend outside this app, negatively impacting other workloads in the deployer's account and the deployer's bill",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["E"]
+        },
+        {
+          "key": "Priority",
+          "value": "Medium"
+        },
+        {
+          "key": "custom:residual",
+          "value": "Open, upstream. The grant is a pattern written by the Agent block, and the API function, the scheduled job and the runtime share the role. The same role may use KMS through SSM on any key. It needs an issue with the CDK Blocks team. cdk-nag reports the wildcards (IAM5) and managed policies (IAM4)."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["F5"]
+        }
+      ]
+    },
+    {
+      "id": "4bfe1473-c6f7-5864-8ce5-451bf8c2f706",
+      "numericId": 13,
+      "displayOrder": 13,
+      "status": "threatIdentified",
+      "tags": ["boundary:stores"],
+      "threatSource": "actor",
+      "prerequisites": "on the network path, or who finds a bucket or table exposed by a setting",
+      "threatAction": "read or change data in transit or at rest",
+      "threatImpact": "disclosure or tampering of saved builds, questions, the snapshot or logs",
+      "impactedGoal": ["confidentiality", "integrity"],
+      "impactedAssets": ["the tables", "the buckets"],
+      "statement": "An actor on the network path, or who finds a bucket or table exposed by a setting can read or change data in transit or at rest, which leads to disclosure or tampering of saved builds, questions, the snapshot or logs, negatively impacting the tables and the buckets",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["T", "I"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A residual risk to accept. With the default CloudFront certificate the security policy is fixed at TLSv1, so the site accepts TLS 1.0 and later (cdk-nag CFR4); the README says so and the deploy prints a warning. Six buckets and the tables use keys AWS manages. Five buckets have no server access logging of their own; three of them are log buckets, and CloudFront logs requests for the site bucket."
+        }
+      ]
+    },
+    {
+      "id": "203a1ea1-032d-5118-b60e-db4aa30aa86c",
+      "numericId": 14,
+      "displayOrder": 14,
+      "status": "threatIdentified",
+      "tags": ["boundary:api"],
+      "threatSource": "internet actor",
+      "prerequisites": "who misuses the open API",
+      "threatAction": "act without leaving a record that names a caller or an address",
+      "threatImpact": "a deployer who can see that a flood or a refusal happened and can't see where it came from",
+      "impactedGoal": ["accountability"],
+      "impactedAssets": ["the deployer's ability to investigate"],
+      "statement": "An internet actor who misuses the open API can act without leaving a record that names a caller or an address, which leads to a deployer who can see that a flood or a refusal happened and can't see where it came from, negatively impacting the deployer's ability to investigate",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["R"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A residual risk to accept. API Gateway access logging is off, which is the CDK Blocks default; turning it on changes an account-wide API Gateway role. cdk-nag reports it (APIG1, APIG6). A refusal is now one WARN line with its reason; it still names no caller."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["F15"]
+        }
+      ]
+    },
+    {
+      "id": "3b229cc6-4c1c-5169-a8d8-131d9692efca",
+      "numericId": 15,
+      "displayOrder": 15,
+      "status": "threatIdentified",
+      "tags": ["boundary:stores"],
+      "threatSource": "fault",
+      "prerequisites": "between the custom Block's store step and its audit step",
+      "threatAction": "leave a stored snapshot with no audit entry",
+      "threatImpact": "an audit trail that misses a write",
+      "impactedGoal": ["accountability"],
+      "impactedAssets": ["the gallery audit trail"],
+      "statement": "A fault between the custom Block's store step and its audit step can leave a stored snapshot with no audit entry, which leads to an audit trail that misses a write, negatively impacting the gallery audit trail",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["R"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A residual risk to accept. The Block's source is generator output, so the fix (record first, then mark stored) belongs in the generator. The README and the page no longer claim an entry for every write. The uploadedBy value is a label the app supplies, not an identity."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["F10"]
+        }
+      ]
+    },
+    {
+      "id": "73b7c752-c2ca-5470-be37-ba8c8af07b12",
+      "numericId": 16,
+      "displayOrder": 16,
+      "status": "threatIdentified",
+      "tags": ["boundary:api"],
+      "threatSource": "internet actor",
+      "prerequisites": "who has the site or API address",
+      "threatAction": "check in with made-up session ids",
+      "threatImpact": "a here-now count that's too high, and new real pages that aren't counted while the join budget is used up",
+      "impactedGoal": ["integrity", "availability"],
+      "impactedAssets": ["the here-now count"],
+      "statement": "An internet actor who has the site or API address can check in with made-up session ids, which leads to a here-now count that's too high, and new real pages that aren't counted while the join budget is used up, negatively impacting the here-now count",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["T", "D"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A residual risk to accept. A fix needs an identity for each client, which the app doesn't have. The count stops at 200, and the building count needs the invite code."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["F12"]
+        }
+      ]
+    },
+    {
+      "id": "040e61f8-277a-5ca6-99bb-71090a612e65",
+      "numericId": 17,
+      "displayOrder": 17,
+      "status": "threatIdentified",
+      "tags": ["boundary:supply-chain"],
+      "threatSource": "actor",
+      "prerequisites": "who controls or exploits a package this repository installs",
+      "threatAction": "run code during install, build, synth or in the deployed function",
+      "threatImpact": "tampered output or use of the deployer's credentials and the stack's role",
+      "impactedGoal": ["integrity", "confidentiality"],
+      "impactedAssets": ["the deployer's machine and account", "the build"],
+      "statement": "An actor who controls or exploits a package this repository installs can run code during install, build, synth or in the deployed function, which leads to tampered output or use of the deployer's credentials and the stack's role, negatively impacting the deployer's machine and account and the build",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["T", "E"]
+        },
+        {
+          "key": "Priority",
+          "value": "Medium"
+        },
+        {
+          "key": "custom:residual",
+          "value": "No advisory is ignored in the scanner settings. Version 4 listed one, minimatch 10.2.6 (CVE-2026-118764), bundled in aws-cdk-lib 2.277.0. aws-cdk-lib is now 2.278.0, whose bundled minimatch is 11.0.9, and the ignore entry is gone; npm audit reads 0 vulnerabilities. Two upgrades didn't wait out the 7-day cooldown that Dependabot applies: every CDK Blocks package moved to 1.0.0 on 2026-11-21, one day after those packages were published, and aws-cdk-lib moved to 2.278.0 on 2026-11-22, two days after its release. The CDK Blocks packages come from the aws/cdk-blocks repository under the names aws-cdk-blocks and @aws-cdk-blocks. Two direct dependencies were new in version 2: @aws-sdk/client-s3 3.1172.0, which the tree already held, and playwright 1.65.1 for the contrast test. The lockfile marks playwright devOptional, because bedrock-agentcore names it as an optional peer; the bundles a deploy uploads hold none of it. CI downloads a Chromium build with Playwright's installer. The CI workflow has never run."
+        }
+      ]
+    },
+    {
+      "id": "8c2f262b-2800-5aca-87f6-ced6a4a4f669",
+      "numericId": 18,
+      "displayOrder": 18,
+      "status": "threatIdentified",
+      "tags": ["boundary:supply-chain"],
+      "threatSource": "actor",
+      "prerequisites": "who registers the @your-team scope on the public npm registry",
+      "threatAction": "publish a package named @your-team/bb-house-bucket",
+      "threatImpact": "a reader who copies the import into another project and runs npm install on that name getting the actor's code",
+      "impactedGoal": ["integrity"],
+      "impactedAssets": ["a reader's own project"],
+      "statement": "An actor who registers the @your-team scope on the public npm registry can publish a package named @your-team/bb-house-bucket, which leads to a reader who copies the import into another project and runs npm install on that name getting the actor's code, negatively impacting a reader's own project",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["S"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A residual risk to accept. This repository's own install can't reach the registry for that name. The exposure left is a reader who copies the import name elsewhere; the page's download comment tells readers to copy the folder."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["F6"]
+        }
+      ]
+    },
+    {
+      "id": "84983736-e7d3-54aa-a868-1bdde446ea57",
+      "numericId": 19,
+      "displayOrder": 19,
+      "status": "threatIdentified",
+      "tags": ["boundary:supply-chain"],
+      "threatSource": "person",
+      "prerequisites": "who can read the repository, a shared invite link, a browser history or the logs",
+      "threatAction": "find the invite code or a deployer's identifiers there",
+      "threatImpact": "use of the save and ask methods by someone the deployer didn't invite",
+      "impactedGoal": ["confidentiality"],
+      "impactedAssets": ["the invite code"],
+      "statement": "A person who can read the repository, a shared invite link, a browser history or the logs can find the invite code or a deployer's identifiers there, which leads to use of the save and ask methods by someone the deployer didn't invite, negatively impacting the invite code",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["I"]
+        },
+        {
+          "key": "Priority",
+          "value": "Medium"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A deployer can still paste the code into a place that keeps it. A forwarded link carries the code to whoever receives it; see threat 3. The secrets scan of the working tree reads the files git tracks or would track, so a secret in a folder .gitignore names isn't scanned; such a file can't be committed."
+        }
+      ]
+    },
+    {
+      "id": "3d8a6426-da34-5131-9a4e-68e6f7ae60ad",
+      "numericId": 20,
+      "displayOrder": 20,
+      "status": "threatIdentified",
+      "tags": ["boundary:browser"],
+      "threatSource": "actor",
+      "prerequisites": "who gets a visitor to open a page the actor controls",
+      "threatAction": "frame the site, or call the API from that page in the visitor's browser",
+      "threatImpact": "actions taken or data read in the visitor's name",
+      "impactedGoal": ["integrity", "confidentiality"],
+      "impactedAssets": ["the visitor's session"],
+      "statement": "An actor who gets a visitor to open a page the actor controls can frame the site, or call the API from that page in the visitor's browser, which leads to actions taken or data read in the visitor's name, negatively impacting the visitor's session",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["T", "I"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A residual risk to accept. There's no Content-Security-Policy header, which is the Hosting construct's default. The page has no HTML sink and the API has no cookie, so the header would be a second layer."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["F15"]
+        }
+      ]
+    },
+    {
+      "id": "8a2b1c83-0065-55d1-89e9-b0f19c6b28d8",
+      "numericId": 21,
+      "displayOrder": 21,
+      "status": "threatIdentified",
+      "tags": ["boundary:browser"],
+      "threatSource": "visitor's own browser or device",
+      "prerequisites": "with a weak or unusual GPU path",
+      "threatAction": "keep drawing the scene while idle, or fail to start the renderer after a graphics adapter was found",
+      "threatImpact": "battery use on the visitor's device, or a blank stage",
+      "impactedGoal": ["availability"],
+      "impactedAssets": ["the page on that device"],
+      "statement": "A visitor's own browser or device with a weak or unusual GPU path can keep drawing the scene while idle, or fail to start the renderer after a graphics adapter was found, which leads to battery use on the visitor's device, or a blank stage, negatively impacting the page on that device",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["D"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A residual risk to accept. The render loop runs always unless reduced motion is on; changing it alters every animation. A rejected renderer start after an adapter was found may leave the stage blank; that's inferred, and no browser on hand fails that way."
+        },
+        {
+          "key": "custom:findings",
+          "value": ["F13"]
+        }
+      ]
+    },
+    {
+      "id": "f40e382b-cff6-53c8-814d-001f2dd9a7e8",
+      "numericId": 22,
+      "displayOrder": 22,
+      "status": "threatIdentified",
+      "tags": ["boundary:stores"],
+      "threatSource": "deploy",
+      "prerequisites": "that replaces the invite secret while a copy of the function is running",
+      "threatAction": "leave that copy holding the old secret's address",
+      "threatImpact": "save and ask calls that fail at random until that copy retires",
+      "impactedGoal": ["availability"],
+      "impactedAssets": ["the save and agent methods"],
+      "statement": "A deploy that replaces the invite secret while a copy of the function is running can leave that copy holding the old secret's address, which leads to save and ask calls that fail at random until that copy retires, negatively impacting the save and agent methods",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["D"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "Covers the invite secret only. A Block that reads its address when the module loads, such as a table or a bucket, stays stale if a deploy replaces it; the README gives the restart command. The retry has run in tests only. The cause is in CDK Blocks' config loading and needs an upstream issue. The failure is closed: a copy that can't read the code refuses."
+        }
+      ]
+    },
+    {
+      "id": "9b250b89-aa3b-5edf-8ed6-866a72efe57c",
+      "numericId": 23,
+      "displayOrder": 23,
+      "status": "threatIdentified",
+      "tags": ["boundary:api"],
+      "threatSource": "internet actor",
+      "prerequisites": "who has the site or API address",
+      "threatAction": "request /cdk-blocks/dashboard, /cdk-blocks/resources or /cdk-blocks/settings and read where the redirect points",
+      "threatImpact": "the AWS Region and the stack's name, which holds the stack id, known to a stranger",
+      "impactedGoal": ["confidentiality"],
+      "impactedAssets": ["the deployment's identifiers"],
+      "statement": "An internet actor who has the site or API address can request /cdk-blocks/dashboard, /cdk-blocks/resources or /cdk-blocks/settings and read where the redirect points, which leads to the AWS Region and the stack's name, which holds the stack id, known to a stranger, negatively impacting the deployment's identifiers",
+      "metadata": [
+        {
+          "key": "STRIDE",
+          "value": ["I"]
+        },
+        {
+          "key": "Priority",
+          "value": "Low"
+        },
+        {
+          "key": "custom:residual",
+          "value": "A residual risk to accept. The app keeps the stack name out of its own API, and these routes give it away. It isn't a credential: the console pages need the deployer's sign-in, and no account id is in the address. Removing the routes needs an option in CDK Blocks, or a rule in front of the API that the sample doesn't add. Read in the library and the template. On 2026-11-21 the maintainers requested /cdk-blocks/dashboard on the 1.0.0 stack and it answered 302 to the console, with the Region and the stack name in the address; the other two routes weren't requested."
+        }
+      ]
+    }
+  ]
+}

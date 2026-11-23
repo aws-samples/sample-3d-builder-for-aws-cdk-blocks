@@ -1,0 +1,3 @@
+# Known advisories this app can't fix yet. Each one has a reason and a date to look again.
+# None today: add an entry under `vulnerabilities:` with an id, an expired_at date and a statement.
+vulnerabilities: []

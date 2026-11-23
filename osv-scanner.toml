@@ -1,0 +1,2 @@
+# Known advisories this app can't fix yet. Each one has a reason and a date to look again.
+# None today: add an [[IgnoredVulns]] entry with an id, an ignoreUntil date and a reason.

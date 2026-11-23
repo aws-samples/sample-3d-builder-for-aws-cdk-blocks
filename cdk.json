@@ -1,0 +1,10 @@
+{
+  "app": "npx tsx -C cdk cdk-blocks/index.cdk.ts",
+  "context": {
+    "@aws-blocks/bb-data:encryptStorageByDefault": true
+  },
+  "watch": {
+    "include": ["**"],
+    "exclude": ["README.md", "cdk*.json", "**/*.d.ts", "node_modules/**", ".cdk-blocks-sandbox/**", "dist/**"]
+  }
+}

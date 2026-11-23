@@ -1,0 +1,31 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // PLATE_CENTER_X is one stud off center, so it is set to STUD. They are two names for two things.
+  "ignoreIssues": { "src/plate.ts": ["duplicates"] },
+  "workspaces": {
+    ".": {
+      "entry": ["test/**/*.test.ts", "scripts/*.mjs"],
+      "project": ["src/**/*.{ts,tsx}", "test/**/*.ts", "scripts/**/*.mjs"],
+      "ignoreDependencies": [
+        // Pins the version of the Hosting construct that aws-cdk-blocks/cdk re-exports.
+        "@aws-cdk-blocks/hosting",
+        // Pins the bundler the Blocks tooling uses for the Lambda function.
+        "esbuild",
+        // Loaded by url() in src/styles.css, which knip doesn't read.
+        "@fontsource/fredoka",
+        "@fontsource/jetbrains-mono"
+      ],
+      // Shipped by @aws-cdk-blocks/core, which arrives through aws-cdk-blocks.
+      "ignoreBinaries": ["blocks-generate-spec"]
+    },
+    "cdk-blocks": {
+      // index.handler.ts is the Lambda entry the Blocks tooling bundles. The scripts are run by name from package.json.
+      "entry": ["index.handler.ts", "scripts/*.ts"],
+      "project": ["**/*.ts"]
+    },
+    "packages/bb-house-bucket": {
+      "entry": ["src/index.*.ts", "src/*.test.ts", "scripts/*.mjs"],
+      "project": ["src/**/*.ts", "scripts/**/*.mjs"]
+    }
+  }
+}

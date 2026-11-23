@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Mondays at 06:17 UTC, so a new advisory shows up without a push.
+    - cron: "17 6 * * 1"
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: typecheck, lint, knip, tests, build, API, capability and contrast tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+      # The API tests start the local dev server themselves. Every Block runs its local implementation, so no AWS account is used.
+      - run: npm run test:e2e
+      # The capability tests prove the daily budgets. They need the dev server stopped, which the API tests leave it, and start their own.
+      - run: npm run test:caps
+      # The contrast test opens the page in headless Chromium, in both looks and at two sizes. The browser is the build that package.json's Playwright version pins.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:contrast
+
+  scan:
+    name: semgrep, secrets, dependencies, licenses
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The secrets scan reads the whole history.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      # Installs the scanners pinned in mise.toml.
+      - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+      - run: npm ci
+      - run: npm run scan

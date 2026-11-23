@@ -1,0 +1,658 @@
+{
+ "default": "generic",
+ "edgeSentences": {
+  "agent>core:config:is-told-where-to-find": {
+   "exact": "The Agent Block (Amazon Bedrock AgentCore runtime) is told where to find the app's config file (blocks-config.json in Amazon S3).",
+   "generic": "The Agent Block (managed AI services) is told where to find the app's config file."
+  },
+  "agent>core:role:is-created-after": {
+   "exact": "The Agent Block (Amazon Bedrock AgentCore runtime) is created after the app's shared AWS IAM role.",
+   "generic": "The Agent Block (managed AI services) is created after the app's shared role."
+  },
+  "agent>core:role:runs-as": {
+   "exact": "The Agent Block (Amazon Bedrock AgentCore runtime) runs as the app's shared AWS IAM role.",
+   "generic": "The Agent Block (managed AI services) runs as the app's shared role."
+  },
+  "agent>shared:index-setup:brings": {
+   "exact": "The Agent Block brings the shared index setup (AWS Lambda functions and an AWS Step Functions state machine). It's created once, however many pieces need it.",
+   "generic": "The Agent Block brings the shared index setup. It's created once, however many pieces need it."
+  },
+  "agent>shared:index-setup:is-set-up-at-deploy-time-by": {
+   "exact": "The Agent Block (AWS CloudFormation custom resource, Amazon DynamoDB table) is set up at deploy time by the shared index setup (AWS Lambda functions and an AWS Step Functions state machine).",
+   "generic": "The Agent Block (deploy-time setup step, managed table) is set up at deploy time by the shared index setup."
+  },
+  "agent>shared:websocket:brings": {
+   "exact": "The Agent Block brings the shared Amazon API Gateway WebSocket API. It's created once, however many pieces need it.",
+   "generic": "The Agent Block brings the shared managed WebSockets API. It's created once, however many pieces need it."
+  },
+  "core:api>core:handler:invokes": {
+   "exact": "The app's Amazon API Gateway REST API invokes the app's shared AWS Lambda function.",
+   "generic": "The app's API invokes the app's shared function."
+  },
+  "core:config>agent:tells-the-app-s-code-where-to-find": {
+   "exact": "The app's config file (blocks-config.json in Amazon S3) tells the app's code where to find the Agent Block (Amazon Bedrock AgentCore runtime, AWS Secrets Manager secret).",
+   "generic": "The app's config file tells the app's code where to find the Agent Block (managed AI services, managed secret)."
+  },
+  "core:config>auth:tells-the-app-s-code-where-to-find": {
+   "exact": "The app's config file (blocks-config.json in Amazon S3) tells the app's code where to find the Auth Block (Amazon Cognito user pool, Amazon Cognito user pool client, AWS Secrets Manager secret).",
+   "generic": "The app's config file tells the app's code where to find the Auth Block (managed user directory, sign-in app client, managed secret)."
+  },
+  "core:config>core:other:is-set-up-at-deploy-time-by": {
+   "exact": "The app's config file (blocks-config.json in Amazon S3) is set up at deploy time by the app's deploy and logging plumbing.",
+   "generic": "The app's config file is set up at deploy time by the app's deploy and logging plumbing."
+  },
+  "core:config>core:other:writes-access-logs-to": {
+   "exact": "The app's config file (blocks-config.json in Amazon S3) writes access logs to the app's deploy and logging plumbing.",
+   "generic": "The app's config file writes access logs to the app's deploy and logging plumbing."
+  },
+  "core:config>database:tells-the-app-s-code-where-to-find": {
+   "exact": "The app's config file (blocks-config.json in Amazon S3) tells the app's code where to find the Database Block (Amazon Aurora DSQL cluster).",
+   "generic": "The app's config file tells the app's code where to find the Database Block (serverless SQL database)."
+  },
+  "core:config>hosting:tells-the-app-s-code-where-to-find": {
+   "exact": "The app's config file (blocks-config.json in Amazon S3) tells the app's code where to find the Hosting construct (Amazon CloudFront distribution).",
+   "generic": "The app's config file tells the app's code where to find the Hosting construct (content delivery network)."
+  },
+  "core:config>realtime:tells-the-app-s-code-where-to-find": {
+   "exact": "The app's config file (blocks-config.json in Amazon S3) tells the app's code where to find the Realtime Block (AWS Secrets Manager secret).",
+   "generic": "The app's config file tells the app's code where to find the Realtime Block (managed secret)."
+  },
+  "core:config>shared:websocket:tells-the-app-s-code-where-to-find": {
+   "exact": "The app's config file (blocks-config.json in Amazon S3) tells the app's code where to find the shared Amazon API Gateway WebSocket API.",
+   "generic": "The app's config file tells the app's code where to find the shared managed WebSockets API."
+  },
+  "core:handler>core:config:is-told-where-to-find": {
+   "exact": "The app's shared AWS Lambda function is told where to find the app's config file (blocks-config.json in Amazon S3).",
+   "generic": "The app's shared function is told where to find the app's config file."
+  },
+  "core:handler>core:role:is-created-after": {
+   "exact": "The app's shared AWS Lambda function is created after the app's shared AWS IAM role.",
+   "generic": "The app's shared function is created after the app's shared role."
+  },
+  "core:handler>core:role:runs-as": {
+   "exact": "The app's shared AWS Lambda function runs as the app's shared AWS IAM role.",
+   "generic": "The app's shared function runs as the app's shared role."
+  },
+  "core:handler>database:is-created-after": {
+   "exact": "The app's shared AWS Lambda function is created after the Database Block (AWS CloudFormation custom resource).",
+   "generic": "The app's shared function is created after the Database Block (deploy-time setup step)."
+  },
+  "core:other>core:config:accepts-access-logs-from": {
+   "exact": "The app's deploy and logging plumbing accepts access logs from the app's config file (blocks-config.json in Amazon S3).",
+   "generic": "The app's deploy and logging plumbing accepts access logs from the app's config file."
+  },
+  "core:other>core:config:is-set-up-at-deploy-time-by": {
+   "exact": "The app's deploy and logging plumbing is set up at deploy time by the app's config file (blocks-config.json in Amazon S3).",
+   "generic": "The app's deploy and logging plumbing is set up at deploy time by the app's config file."
+  },
+  "core:role>agent:can-invoke": {
+   "exact": "The app's shared AWS IAM role can invoke the Agent Block (Amazon Bedrock AgentCore runtime).",
+   "generic": "The app's shared role can invoke the Agent Block (managed AI services)."
+  },
+  "core:role>agent:can-read-and-write": {
+   "exact": "The app's shared AWS IAM role can read and write the Agent Block (Amazon DynamoDB table x3, Amazon S3 bucket).",
+   "generic": "The app's shared role can read and write the Agent Block (managed table x3, storage bucket)."
+  },
+  "core:role>agent:can-read-the-secret-kept-by": {
+   "exact": "The app's shared AWS IAM role can read the secret kept by the Agent Block (AWS Secrets Manager secret).",
+   "generic": "The app's shared role can read the secret kept by the Agent Block (managed secret)."
+  },
+  "core:role>auth:can-read-and-write": {
+   "exact": "The app's shared AWS IAM role can read and write the Auth Block (Amazon DynamoDB table).",
+   "generic": "The app's shared role can read and write the Auth Block (managed table)."
+  },
+  "core:role>auth:can-read-the-secret-kept-by": {
+   "exact": "The app's shared AWS IAM role can read the secret kept by the Auth Block (AWS Secrets Manager secret).",
+   "generic": "The app's shared role can read the secret kept by the Auth Block (managed secret)."
+  },
+  "core:role>auth:can-sign-users-up-and-in-through": {
+   "exact": "The app's shared AWS IAM role can sign users up and in through the Auth Block (Amazon Cognito user pool).",
+   "generic": "The app's shared role can sign users up and in through the Auth Block (managed user directory)."
+  },
+  "core:role>core:config:can-read": {
+   "exact": "The app's shared AWS IAM role can read the app's config file (blocks-config.json in Amazon S3).",
+   "generic": "The app's shared role can read the app's config file."
+  },
+  "core:role>database:can-run-sql-on": {
+   "exact": "The app's shared AWS IAM role can run SQL on the Database Block (Amazon Aurora DSQL cluster).",
+   "generic": "The app's shared role can run SQL on the Database Block (serverless SQL database)."
+  },
+  "core:role>housebucket:can-encrypt-and-decrypt-with": {
+   "exact": "The app's shared AWS IAM role can encrypt and decrypt with the HouseBucket custom Block (AWS KMS key).",
+   "generic": "The app's shared role can encrypt and decrypt with the HouseBucket custom Block (encryption key)."
+  },
+  "core:role>housebucket:can-read-and-write": {
+   "exact": "The app's shared AWS IAM role can read and write the HouseBucket custom Block (Amazon DynamoDB table, Amazon S3 bucket).",
+   "generic": "The app's shared role can read and write the HouseBucket custom Block (managed table, storage bucket)."
+  },
+  "core:role>kvstore:can-read-and-write": {
+   "exact": "The app's shared AWS IAM role can read and write the KVStore Block (Amazon DynamoDB table).",
+   "generic": "The app's shared role can read and write the KVStore Block (managed table)."
+  },
+  "core:role>realtime:can-read-and-write": {
+   "exact": "The app's shared AWS IAM role can read and write the Realtime Block (Amazon DynamoDB table).",
+   "generic": "The app's shared role can read and write the Realtime Block (managed table)."
+  },
+  "core:role>realtime:can-read-the-secret-kept-by": {
+   "exact": "The app's shared AWS IAM role can read the secret kept by the Realtime Block (AWS Secrets Manager secret).",
+   "generic": "The app's shared role can read the secret kept by the Realtime Block (managed secret)."
+  },
+  "core:role>shared:websocket:can-push-messages-through": {
+   "exact": "The app's shared AWS IAM role can push messages through the shared Amazon API Gateway WebSocket API.",
+   "generic": "The app's shared role can push messages through the shared managed WebSockets API."
+  },
+  "database>core:role:is-set-up-at-deploy-time-by": {
+   "exact": "The Database Block (AWS CloudFormation custom resource) is set up at deploy time by the app's shared AWS IAM role.",
+   "generic": "The Database Block (deploy-time setup step) is set up at deploy time by the app's shared role."
+  },
+  "hosting>core:api:sends-requests-to": {
+   "exact": "The Hosting construct (Amazon CloudFront distribution) sends requests to the app's Amazon API Gateway REST API.",
+   "generic": "The Hosting construct (content delivery network) sends requests to the app's API."
+  },
+  "hosting>core:other:is-set-up-at-deploy-time-by": {
+   "exact": "The Hosting construct (Amazon S3 bucket, Amazon S3 bucket policy x2, AWS CDK bucket deployment (custom resource), AWS CDK S3 auto-delete objects (custom resource) x2) is set up at deploy time by the app's deploy and logging plumbing.",
+   "generic": "The Hosting construct (storage bucket, bucket access policy x2, deploy-time file upload, bucket cleanup step x2) is set up at deploy time by the app's deploy and logging plumbing."
+  },
+  "realtime>shared:index-setup:brings": {
+   "exact": "The Realtime Block brings the shared index setup (AWS Lambda functions and an AWS Step Functions state machine). It's created once, however many pieces need it.",
+   "generic": "The Realtime Block brings the shared index setup. It's created once, however many pieces need it."
+  },
+  "realtime>shared:index-setup:is-set-up-at-deploy-time-by": {
+   "exact": "The Realtime Block (AWS CloudFormation custom resource, Amazon DynamoDB table) is set up at deploy time by the shared index setup (AWS Lambda functions and an AWS Step Functions state machine).",
+   "generic": "The Realtime Block (deploy-time setup step, managed table) is set up at deploy time by the shared index setup."
+  },
+  "realtime>shared:websocket:brings": {
+   "exact": "The Realtime Block brings the shared Amazon API Gateway WebSocket API. It's created once, however many pieces need it.",
+   "generic": "The Realtime Block brings the shared managed WebSockets API. It's created once, however many pieces need it."
+  },
+  "shared:websocket>core:handler:invokes": {
+   "exact": "The shared Amazon API Gateway WebSocket API invokes the app's shared AWS Lambda function.",
+   "generic": "The shared managed WebSockets API invokes the app's shared function."
+  }
+ },
+ "modes": [
+  "generic",
+  "exact"
+ ],
+ "nodes": {
+  "agent": {
+   "category": "Artificial Intelligence",
+   "exact": "Agent",
+   "generic": "Agent",
+   "genericSource": "the Block's own name in code"
+  },
+  "auth": {
+   "category": "Security Identity Compliance",
+   "exact": "Auth",
+   "generic": "Auth",
+   "genericSource": "the Block's own name in code"
+  },
+  "core:api": {
+   "category": "Networking Content Delivery",
+   "exact": "the app's Amazon API Gateway REST API",
+   "generic": "the app's API",
+   "genericSource": "self-written"
+  },
+  "core:config": {
+   "category": "Storage",
+   "exact": "the app's config file (blocks-config.json in Amazon S3)",
+   "generic": "the app's config file",
+   "genericSource": "self-written"
+  },
+  "core:handler": {
+   "category": "Compute",
+   "exact": "the app's shared AWS Lambda function",
+   "generic": "the app's shared function",
+   "genericSource": "self-written"
+  },
+  "core:other": {
+   "category": "Management Governance",
+   "exact": "the app's deploy and logging plumbing",
+   "generic": "the app's deploy and logging plumbing",
+   "genericSource": "self-written"
+  },
+  "core:role": {
+   "category": "Security Identity Compliance",
+   "exact": "the app's shared AWS IAM role",
+   "generic": "the app's shared role",
+   "genericSource": "self-written"
+  },
+  "database": {
+   "category": "Database",
+   "exact": "Database",
+   "generic": "Database",
+   "genericSource": "the Block's own name in code"
+  },
+  "hosting": {
+   "category": "Networking Content Delivery",
+   "exact": "Hosting",
+   "generic": "Hosting",
+   "genericSource": "the Block's own name in code"
+  },
+  "housebucket": {
+   "category": "Storage",
+   "exact": "HouseBucket",
+   "generic": "HouseBucket",
+   "genericSource": "the Block's own name in code"
+  },
+  "kvstore": {
+   "category": "Database",
+   "exact": "KVStore",
+   "generic": "KVStore",
+   "genericSource": "the Block's own name in code"
+  },
+  "realtime": {
+   "category": "Networking Content Delivery",
+   "exact": "Realtime",
+   "generic": "Realtime",
+   "genericSource": "the Block's own name in code"
+  },
+  "shared:index-setup": {
+   "category": "Management Governance",
+   "exact": "the shared index setup (AWS Lambda functions and an AWS Step Functions state machine)",
+   "generic": "the shared index setup",
+   "genericSource": "self-written"
+  },
+  "shared:websocket": {
+   "category": "Networking Content Delivery",
+   "exact": "the shared Amazon API Gateway WebSocket API",
+   "generic": "the shared managed WebSockets API",
+   "genericSource": "self-written around MESSAGING.md: \"managed WebSockets\""
+  }
+ },
+ "note": "Exact names are what the synth shows. Generic labels never name a service. genericSource says whether a label is approved copy from MESSAGING.md or written by us. Counts and structure are the same in both modes; only names change.",
+ "outsideGrantSentences": {
+  "grant:155fdbc0bd": {
+   "exact": "The app's shared AWS IAM role can send metrics to Amazon CloudWatch.",
+   "generic": "The app's shared role can send metrics."
+  },
+  "grant:84c1981b43": {
+   "exact": "The app's shared AWS IAM role can write the Amazon Bedrock AgentCore runtime's Amazon CloudWatch Logs.",
+   "generic": "The app's shared role can write the agent runtime's logs."
+  },
+  "grant:891c13ad3c": {
+   "exact": "The app's shared AWS IAM role can get Amazon Bedrock AgentCore workload access tokens.",
+   "generic": "The app's shared role can get workload access tokens for the agent."
+  },
+  "grant:bb321934cb": {
+   "exact": "The app's shared AWS IAM role can send traces to AWS X-Ray.",
+   "generic": "The app's shared role can send traces."
+  },
+  "grant:c23e9e683b": {
+   "exact": "The app's shared AWS IAM role can write the Amazon Bedrock AgentCore runtime's Amazon CloudWatch Logs.",
+   "generic": "The app's shared role can write the agent runtime's logs."
+  },
+  "grant:c971efa6b5": {
+   "exact": "The app's shared AWS IAM role can call Amazon Bedrock foundation models and inference profiles.",
+   "generic": "The app's shared role can call managed AI models."
+  },
+  "grant:cee50ea7bc": {
+   "exact": "The app's shared AWS IAM role can write the Amazon Bedrock AgentCore runtime's Amazon CloudWatch Logs.",
+   "generic": "The app's shared role can write the agent runtime's logs."
+  }
+ },
+ "schema": 1,
+ "selfWritten": {
+  "grantMeanings": [
+   "can call managed AI models",
+   "can get workload access tokens for the agent",
+   "can send metrics",
+   "can send traces",
+   "can write the agent runtime's logs"
+  ],
+  "meanings": [
+   "accepts access logs from",
+   "brings",
+   "can encrypt and decrypt with",
+   "can invoke",
+   "can push messages through",
+   "can read",
+   "can read and write",
+   "can read the secret kept by",
+   "can run SQL on",
+   "can sign users up and in through",
+   "invokes",
+   "is created after",
+   "is set up at deploy time by",
+   "is told where to find",
+   "runs as",
+   "sends requests to",
+   "tells the app's code where to find",
+   "writes access logs to"
+  ],
+  "nodeLabels": [
+   "the app's API",
+   "the app's config file",
+   "the app's deploy and logging plumbing",
+   "the app's shared function",
+   "the app's shared role",
+   "the shared index setup",
+   "the shared managed WebSockets API",
+   "the shared secret setup"
+  ],
+  "typeAltLabels": [
+   "a managed WebSocket API",
+   "a managed agent runtime",
+   "a serverless function"
+  ],
+  "typeLabels": [
+   "a WebSocket integration",
+   "a WebSocket route",
+   "a WebSocket stage",
+   "a bucket access policy",
+   "a bucket cleanup step",
+   "a content delivery network",
+   "a deploy-time check on the user directory",
+   "a deploy-time file upload",
+   "a deploy-time setup step",
+   "a function layer",
+   "a log group",
+   "a managed API",
+   "a managed secret",
+   "a managed table",
+   "a managed user directory",
+   "a metrics dashboard",
+   "a notification topic",
+   "a permissions policy",
+   "a resource group",
+   "a schedule",
+   "a serverless SQL database",
+   "a sign-in app client",
+   "a storage bucket",
+   "a workflow",
+   "an API deployment",
+   "an API method",
+   "an API path",
+   "an API stage",
+   "an alarm",
+   "an edge function",
+   "an edge key-value store",
+   "an encryption key",
+   "an execution role",
+   "an invoke permission",
+   "an origin access rule",
+   "build metadata"
+  ]
+ },
+ "types": {
+  "AWS::ApiGateway::Deployment": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon API Gateway deployment",
+   "generic": "an API deployment",
+   "genericSource": "self-written",
+   "type": "AWS::ApiGateway::Deployment"
+  },
+  "AWS::ApiGateway::Method": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon API Gateway method",
+   "generic": "an API method",
+   "genericSource": "self-written",
+   "type": "AWS::ApiGateway::Method"
+  },
+  "AWS::ApiGateway::Resource": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon API Gateway resource",
+   "generic": "an API path",
+   "genericSource": "self-written",
+   "type": "AWS::ApiGateway::Resource"
+  },
+  "AWS::ApiGateway::RestApi": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon API Gateway REST API",
+   "generic": "a managed API",
+   "genericSource": "self-written",
+   "type": "AWS::ApiGateway::RestApi"
+  },
+  "AWS::ApiGateway::Stage": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon API Gateway stage",
+   "generic": "an API stage",
+   "genericSource": "self-written",
+   "type": "AWS::ApiGateway::Stage"
+  },
+  "AWS::ApiGatewayV2::Api": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon API Gateway WebSocket API",
+   "generic": "managed WebSockets",
+   "genericAlt": "a managed WebSocket API",
+   "genericAltSource": "self-written",
+   "genericSource": "MESSAGING.md: \"managed WebSockets\"",
+   "type": "AWS::ApiGatewayV2::Api"
+  },
+  "AWS::ApiGatewayV2::Integration": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon API Gateway WebSocket integration",
+   "generic": "a WebSocket integration",
+   "genericSource": "self-written",
+   "type": "AWS::ApiGatewayV2::Integration"
+  },
+  "AWS::ApiGatewayV2::Route": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon API Gateway WebSocket route",
+   "generic": "a WebSocket route",
+   "genericSource": "self-written",
+   "type": "AWS::ApiGatewayV2::Route"
+  },
+  "AWS::ApiGatewayV2::Stage": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon API Gateway WebSocket stage",
+   "generic": "a WebSocket stage",
+   "genericSource": "self-written",
+   "type": "AWS::ApiGatewayV2::Stage"
+  },
+  "AWS::BedrockAgentCore::Runtime": {
+   "category": "Artificial Intelligence",
+   "exact": "Amazon Bedrock AgentCore runtime",
+   "generic": "managed AI services",
+   "genericAlt": "a managed agent runtime",
+   "genericAltSource": "self-written",
+   "genericSource": "MESSAGING.md: \"managed AI services\"",
+   "type": "AWS::BedrockAgentCore::Runtime"
+  },
+  "AWS::CDK::Metadata": {
+   "category": "Developer Tools",
+   "exact": "AWS CDK metadata",
+   "generic": "build metadata",
+   "genericSource": "self-written",
+   "type": "AWS::CDK::Metadata"
+  },
+  "AWS::CloudFormation::CustomResource": {
+   "category": "Management Governance",
+   "exact": "AWS CloudFormation custom resource",
+   "generic": "a deploy-time setup step",
+   "genericSource": "self-written",
+   "type": "AWS::CloudFormation::CustomResource"
+  },
+  "AWS::CloudFront::Distribution": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon CloudFront distribution",
+   "generic": "a content delivery network",
+   "genericSource": "self-written",
+   "type": "AWS::CloudFront::Distribution"
+  },
+  "AWS::CloudFront::Function": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon CloudFront function",
+   "generic": "an edge function",
+   "genericSource": "self-written",
+   "type": "AWS::CloudFront::Function"
+  },
+  "AWS::CloudFront::KeyValueStore": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon CloudFront KeyValueStore",
+   "generic": "an edge key-value store",
+   "genericSource": "self-written",
+   "type": "AWS::CloudFront::KeyValueStore"
+  },
+  "AWS::CloudFront::OriginAccessControl": {
+   "category": "Networking Content Delivery",
+   "exact": "Amazon CloudFront origin access control",
+   "generic": "an origin access rule",
+   "genericSource": "self-written",
+   "type": "AWS::CloudFront::OriginAccessControl"
+  },
+  "AWS::CloudWatch::Alarm": {
+   "category": "Management Governance",
+   "exact": "Amazon CloudWatch alarm",
+   "generic": "an alarm",
+   "genericSource": "self-written",
+   "type": "AWS::CloudWatch::Alarm"
+  },
+  "AWS::CloudWatch::Dashboard": {
+   "category": "Management Governance",
+   "exact": "Amazon CloudWatch dashboard",
+   "generic": "a metrics dashboard",
+   "genericSource": "self-written",
+   "type": "AWS::CloudWatch::Dashboard"
+  },
+  "AWS::Cognito::UserPool": {
+   "category": "Security Identity Compliance",
+   "exact": "Amazon Cognito user pool",
+   "generic": "a managed user directory",
+   "genericSource": "self-written",
+   "type": "AWS::Cognito::UserPool"
+  },
+  "AWS::Cognito::UserPoolClient": {
+   "category": "Security Identity Compliance",
+   "exact": "Amazon Cognito user pool client",
+   "generic": "a sign-in app client",
+   "genericSource": "self-written",
+   "type": "AWS::Cognito::UserPoolClient"
+  },
+  "AWS::DSQL::Cluster": {
+   "category": "Database",
+   "exact": "Amazon Aurora DSQL cluster",
+   "generic": "a serverless SQL database",
+   "genericSource": "self-written",
+   "type": "AWS::DSQL::Cluster"
+  },
+  "AWS::DynamoDB::Table": {
+   "category": "Database",
+   "exact": "Amazon DynamoDB table",
+   "generic": "a managed table",
+   "genericSource": "self-written",
+   "type": "AWS::DynamoDB::Table"
+  },
+  "AWS::IAM::Policy": {
+   "category": "Security Identity Compliance",
+   "exact": "AWS IAM policy",
+   "generic": "a permissions policy",
+   "genericSource": "self-written",
+   "type": "AWS::IAM::Policy"
+  },
+  "AWS::IAM::Role": {
+   "category": "Security Identity Compliance",
+   "exact": "AWS IAM role",
+   "generic": "an execution role",
+   "genericSource": "self-written",
+   "type": "AWS::IAM::Role"
+  },
+  "AWS::KMS::Key": {
+   "category": "Security Identity Compliance",
+   "exact": "AWS KMS key",
+   "generic": "an encryption key",
+   "genericSource": "self-written",
+   "type": "AWS::KMS::Key"
+  },
+  "AWS::Lambda::Function": {
+   "category": "Compute",
+   "exact": "AWS Lambda function",
+   "generic": "managed compute",
+   "genericAlt": "a serverless function",
+   "genericAltSource": "self-written",
+   "genericSource": "MESSAGING.md: \"managed compute\"",
+   "type": "AWS::Lambda::Function"
+  },
+  "AWS::Lambda::LayerVersion": {
+   "category": "Compute",
+   "exact": "AWS Lambda layer",
+   "generic": "a function layer",
+   "genericSource": "self-written",
+   "type": "AWS::Lambda::LayerVersion"
+  },
+  "AWS::Lambda::Permission": {
+   "category": "Compute",
+   "exact": "AWS Lambda permission",
+   "generic": "an invoke permission",
+   "genericSource": "self-written",
+   "type": "AWS::Lambda::Permission"
+  },
+  "AWS::Logs::LogGroup": {
+   "category": "Management Governance",
+   "exact": "Amazon CloudWatch Logs log group",
+   "generic": "a log group",
+   "genericSource": "self-written",
+   "type": "AWS::Logs::LogGroup"
+  },
+  "AWS::ResourceGroups::Group": {
+   "category": "Management Governance",
+   "exact": "AWS Resource Groups group",
+   "generic": "a resource group",
+   "genericSource": "self-written",
+   "type": "AWS::ResourceGroups::Group"
+  },
+  "AWS::S3::Bucket": {
+   "category": "Storage",
+   "exact": "Amazon S3 bucket",
+   "generic": "a storage bucket",
+   "genericSource": "self-written",
+   "type": "AWS::S3::Bucket"
+  },
+  "AWS::S3::BucketPolicy": {
+   "category": "Storage",
+   "exact": "Amazon S3 bucket policy",
+   "generic": "a bucket access policy",
+   "genericSource": "self-written",
+   "type": "AWS::S3::BucketPolicy"
+  },
+  "AWS::SNS::Topic": {
+   "category": "Application Integration",
+   "exact": "Amazon SNS topic",
+   "generic": "a notification topic",
+   "genericSource": "self-written",
+   "type": "AWS::SNS::Topic"
+  },
+  "AWS::Scheduler::Schedule": {
+   "category": "Application Integration",
+   "exact": "Amazon EventBridge Scheduler schedule",
+   "generic": "a schedule",
+   "genericSource": "self-written",
+   "type": "AWS::Scheduler::Schedule"
+  },
+  "AWS::SecretsManager::Secret": {
+   "category": "Security Identity Compliance",
+   "exact": "AWS Secrets Manager secret",
+   "generic": "a managed secret",
+   "genericSource": "self-written",
+   "type": "AWS::SecretsManager::Secret"
+  },
+  "AWS::StepFunctions::StateMachine": {
+   "category": "Application Integration",
+   "exact": "AWS Step Functions state machine",
+   "generic": "a workflow",
+   "genericSource": "self-written",
+   "type": "AWS::StepFunctions::StateMachine"
+  },
+  "Custom::BlocksAuthPoolGuard": {
+   "category": "Management Governance",
+   "exact": "AWS CDK Blocks user pool guard (custom resource)",
+   "generic": "a deploy-time check on the user directory",
+   "genericSource": "self-written",
+   "type": "Custom::BlocksAuthPoolGuard"
+  },
+  "Custom::CDKBucketDeployment": {
+   "category": "Management Governance",
+   "exact": "AWS CDK bucket deployment (custom resource)",
+   "generic": "a deploy-time file upload",
+   "genericSource": "self-written",
+   "type": "Custom::CDKBucketDeployment"
+  },
+  "Custom::S3AutoDeleteObjects": {
+   "category": "Management Governance",
+   "exact": "AWS CDK S3 auto-delete objects (custom resource)",
+   "generic": "a bucket cleanup step",
+   "genericSource": "self-written",
+   "type": "Custom::S3AutoDeleteObjects"
+  }
+ }
+}

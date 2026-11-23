@@ -1,0 +1,25 @@
+{
+  "caseNote": "Each Block, the Hosting construct and the custom Block, alone on the \"backend\" template of create-blocks-app 1.0.0 with default options and the production preset (BlocksPresets.production, what npm run deploy synthesizes), counted as resources added to a no-Blocks baseline.",
+  "blocks": {
+    "hosting": {
+      "note": "Default CloudFront front door with a one-page static site; the Hosting construct goes in cdk-blocks/index.cdk.ts, takes the stack rather than the scope, and the templates leave it out of a plain sandbox."
+    },
+    "housebucket": {
+      "note": "A custom Block, built on FileBucket, from a package in the app's workspace. These counts are with all four standards on."
+    }
+  },
+  "generic": {
+    "blocks": {
+      "database": {
+        "note": "Synthesized with no options: a serverless SQL database, and 20 resources that run schema migrations at deploy. Both presets give 21, and production also retains the database and turns on deletion protection."
+      },
+      "auth": {
+        "tagline": "Sign-up and sign-in backed by a managed user directory",
+        "note": "Auth with default options: email and password sign-in on a managed user directory. Of its 13 resources, 9 are the deploy-time guard for that directory. The sandbox preset gives 21."
+      },
+      "hosting": {
+        "note": "Default content delivery network front door with a one-page static site; the Hosting construct goes in cdk-blocks/index.cdk.ts, takes the stack rather than the scope, and the templates leave it out of a plain sandbox."
+      }
+    }
+  }
+}

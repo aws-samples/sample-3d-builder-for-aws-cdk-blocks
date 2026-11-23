@@ -1,0 +1,45 @@
+dist
+# Any other build output folder
+dist-*/
+node_modules
+build-temp
+.cdk-blocks-sandbox
+cdk.out/
+cdk-blocks/client.js
+cdk-blocks/blocks.spec.json
+.cdk-blocks/local/
+.hosting/
+
+# This clone's stack id, written by `npm run setup`. Never shared: bucket names come from it.
+.cdk-blocks/config.json
+# This clone's deploy record, written by `npm run deploy`. It holds the stack's name, so it's never shared either.
+.cdk-blocks/deploy-history.jsonl
+
+# Secrets and key material — never commit
+.env
+# Also ignores .env.<mode> (e.g. .env.production). If you commit non-secret
+# per-mode defaults, un-ignore them here, e.g. !.env.production
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+# A `credentials` file at any depth; a `credentials/` directory (app code) is not ignored
+credentials
+!credentials/
+.aws/
+
+# Baseplate: the invite code and any invite link never go in git.
+# (The local invite code lives in .cdk-blocks/local/data/settings.json, ignored above.)
+*.local
+*.local.*
+.invite-code*
+invite-code*
+invite-link*
+
+# The custom Block's package: its build cache. (Its dist/ and the .cdk-blocks/local/data/ its tests leave are ignored above.)
+*.tsbuildinfo
+
+# Folders that releases of CDK Blocks before 1.0 wrote. A clone that ran one can still hold them.
+.blocks-sandbox
+.bb-data/

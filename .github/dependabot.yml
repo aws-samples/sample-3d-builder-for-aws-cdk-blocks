@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      cdk-blocks:
+        patterns: ["aws-cdk-blocks", "@aws-cdk-blocks/*"]
+      cdk:
+        patterns: ["aws-cdk", "aws-cdk-lib", "constructs", "cdk-nag"]
+      three:
+        patterns: ["three", "@types/three", "@react-three/*", "@react-spring/three", "maath"]
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      dev-tools:
+        dependency-type: development
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
