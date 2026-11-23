@@ -1,12 +1,16 @@
 # 3D builder for AWS CDK Blocks
 
-This is a sample app that shows what [AWS CDK Blocks](https://github.com/aws/cdk-blocks) create. On screen the app calls itself Baseplate. A visitor snaps five Blocks, the Hosting construct and one custom Block onto a baseplate in 3D and opens each one to see the AWS resources behind it. The numbers on the page come from real `cdk synth` runs that are stored in the repository as data.
+![The builder with all seven pieces snapped onto the plate: Hosting, Database, KVStore, the HouseBucket custom Block, Agent, Realtime and Auth, joined by lit lines to the app's API, shared function, shared role and config file. The counter reads 115 resources and 20 connections from 18 lines of TypeScript.](assets/builder-hero.webp)
+
+This is a sample app that shows what [AWS CDK Blocks](https://github.com/aws/cdk-blocks) create. Its browser tab and its stack name call it Baseplate. A visitor snaps five Blocks, the Hosting construct and one custom Block onto a baseplate in 3D and opens each one to see the AWS resources behind it. The numbers on the page come from real `cdk synth` runs that are stored in the repository as data.
 
 The app is itself built on CDK Blocks, so it's also an example of a small deployed Blocks app: an agent, live updates, key-value stores, a scheduled job, a secret, metrics, a dashboard and static hosting. It uses release 1.0.0: the `aws-cdk-blocks` package and the packages under the `@aws-cdk-blocks` npm scope. The [AWS CDK Blocks Developer Guide](https://docs.aws.amazon.com/cdk/blocks/devguide/what-is-blocks.html) describes each Block.
 
 This is sample code, for non-production usage. You should work with your security and legal teams to meet your organizational security, regulatory and compliance requirements before deployment. It's for learning: don't put production, personal or sensitive data in it, and give the invite link only to people you know. [Before you deploy](#before-you-deploy) has the short list, and says what this repository's security notes do and don't cover.
 
 ## What it does
+
+![The Hosting construct opened on the plate. Six tiles above it show what it creates: a content delivery network, two storage buckets, three edge functions, an edge key-value store, an alarm and a notification topic. Database, KVStore, the HouseBucket custom Block and Agent are on the plate behind it.](assets/block-open-hosting.webp)
 
 The builder works in the browser with no backend call. The backend adds four things:
 
@@ -17,24 +21,17 @@ The builder works in the browser with no backend call. The backend adds four thi
 
 Saving a build and asking the agent need an invite code. Everything else is open to anyone who has the URL.
 
+![The agent box after a question, on the local dev server. The Agent Block ran its tool with no model and snapped on KVStore, Auth, Realtime and Hosting: 83 resources and 13 connections. Two saved builds sit in the recent-builds strip, one marked build of the hour.](assets/agent-picks-blocks.webp)
+
 There's no hosted copy of this app. To see it, run it on your machine or deploy your own.
+
+<p align="center"><img src="assets/builder-mobile.webp" width="270" alt="The builder at phone width, 384 pixels: the plate with five pieces on top and the tray of pieces under it."> <img src="assets/block-open-mobile.webp" width="270" alt="The Realtime Block opened at phone width: managed WebSockets, three WebSocket routes, a managed table and a managed secret."></p>
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  B[Browser] -->|page| CF[CloudFront distribution]
-  CF --> S3[(S3 bucket: built page)]
-  CF -->|/cdk-blocks/api| API[API Gateway REST API]
-  B -->|live updates| WS[API Gateway WebSocket API]
-  API --> FN[Lambda function: cdk-blocks/index.ts]
-  FN --> DDB[(DynamoDB tables)]
-  FN --> SEC[Secrets Manager: invite code]
-  FN --> AC[Bedrock AgentCore runtime]
-  AC --> BR[Amazon Bedrock model]
-  SCH[EventBridge Scheduler, every minute] --> FN
-  FN --> GB[(S3 bucket with its own KMS key: gallery snapshot)]
-```
+![Architecture diagram of the app's AWS stack, with nine numbered paths and a legend that describes each one. A browser loads the page from a CloudFront distribution backed by an S3 bucket. CloudFront passes API calls to an API Gateway REST API and on to one Lambda function, and open pages hold a connection to an API Gateway WebSocket API that the function pushes updates through. The function uses seven DynamoDB tables, two Secrets Manager secrets, an Amazon Bedrock AgentCore runtime that calls Claude Haiku 5.5 in Amazon Bedrock, and the HouseBucket custom Block's S3 bucket with its own KMS key. EventBridge Scheduler runs the function every minute, and CloudWatch alarms notify an SNS topic.](assets/architecture.png)
+
+Open the picture to read it at full size; its legend describes each numbered path. The stack has seven S3 buckets: the site bucket and the gallery bucket in the diagram, an access-log bucket for each of those two, the bucket that holds the app's config file, that bucket's own log bucket, and one that the Agent Block keeps. The other resources include 13 IAM roles, 10 deploy-time helper functions, a Step Functions state machine, three CloudFront functions with an edge key-value store, a second KMS key for the alarm topic and three log groups. The template has 155 resources in all.
 
 | Block | Job here |
 |---|---|
@@ -56,10 +53,13 @@ Where things are:
 - `packages/bb-house-bucket/` is the custom Block, a workspace package. It isn't published to npm, and the app depends on it by path.
 - `cdk-blocks/fresh-secret.ts` reads the invite code so that a running copy of the function follows a replaced secret. `cdk-blocks/handler-guards.ts` sets what the deployed function logs at which level.
 - `test/` has the tests. `scripts/` has the first-run setup, the page-data splitter and the scan script.
+- `assets/` has this page's screenshots and the architecture diagram. `assets/architecture.drawio` is the diagram's source; it opens in [draw.io](https://www.drawio.com/).
 - `AGENTS.md` is a guide for coding agents working in this repository or a fork.
 - `docs/threat-model.tc.json` is the threat model, as a [Threat Composer](https://github.com/awslabs/threat-composer) file. Import it into Threat Composer to read it.
 
-The gallery snapshot file has no reader in the app. The scheduled job writes it to show a custom Block doing real work.
+The gallery snapshot file has no reader in the app. The scheduled job writes it to show a custom Block doing real work. The builder shows the same custom Block. Opened, it lists what each of the four standards adds or changes, and what the Block changes in the app around it:
+
+![The HouseBucket custom Block opened in the builder. Four tiles show your files, access logs, your own key and an audit trail, each marked with the standard that added or changed it. A panel headed Outside this Block lists the statements the Block adds to the app's shared role.](assets/custom-block-outside.webp)
 
 ## Prerequisites
 
@@ -275,7 +275,7 @@ Every number the builder shows is looked up, never computed on the page. The num
 
 ## The icons and third-party software
 
-The tiles carry AWS Architecture Icons. `src/icons/README.md` says where they come from and how to run the page without them.
+The tiles carry AWS Architecture Icons. `src/icons/README.md` says where they come from and how to run the page without them. The screenshots and the diagram in `assets/` show the same icons.
 
 The page uses the Fredoka and JetBrains Mono fonts from the `@fontsource` npm packages, under the SIL Open Font License 1.1. `THIRD-PARTY-LICENSES` lists the licenses of the production dependencies, and the build ships a copy with the page.
 
