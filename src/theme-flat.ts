@@ -32,9 +32,23 @@ const SYSTEM_MONO = 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace'
 // #6EE750 13.4:1. Black text on each face color is 5.1:1 or better. Every text pair here is 4.5:1 or more.
 //
 // The page has surfaces that keep a light fill under this theme: the custom Block's panel and the
-// label on its plate, the cards for shared resources, the marks on changed code lines. The LIGHT
-// rule below turns the text variables dark inside each one, so nothing light is drawn on them.
-const LIGHT = [".yours", ".team-label", ".connections-count", ".node-btn", ".carry", ".link-btn", ".line-mark"]
+// label on its plate, the cards for shared resources, the marks on changed code lines. The text-only
+// page shows some of them outside that panel, on the dark page: the "Outside this Block" box, the
+// changed and added marks, and the "carries" pill. The LIGHT rule below turns the text variables dark
+// inside each one, so nothing light is drawn on them.
+const LIGHT = [
+  ".yours",
+  ".team-label",
+  ".connections-count",
+  ".node-btn",
+  ".carry",
+  ".link-btn",
+  ".line-mark",
+  ".outside",
+  ".mark.is-changed",
+  ".mark.is-added",
+  ".sup-link",
+]
   .map((surface) => `:root[data-theme] ${surface}`)
   .join(", ");
 const CSS = `

@@ -12,7 +12,8 @@
  *
  * It opens the page in headless Chromium on the local dev server (it reuses a running one or
  * starts one), puts bricks on the plate, toggles one, unlocks the page with the local invite
- * code, and after each step reads the computed color of every piece of visible text and of
+ * code, opens the page once more with WebGPU and WebGL taken away so it shows its text-only
+ * fallback, and after each step reads the computed color of every piece of visible text and of
  * the background behind it. WCAG 2.2 AA asks for 4.5 to 1, or 3 to 1 for large text (24 px, or
  * 18.66 px bold) and for the marks of controls. The test fails below that.
  *
@@ -242,6 +243,15 @@ function measure(glyphs: string[]): Finding[] {
 /** Control marks with no text: the dot beside the here-now count, and a switch's track and knob. */
 const GLYPHS = ['.dot', '.switch-knob', '.switch-track'];
 
+/** Runs in the page before its own code. Takes WebGPU and WebGL away, so the page shows its text-only fallback. */
+const NO_3D = `
+  Object.defineProperty(navigator, 'gpu', { value: undefined });
+  const getContext = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+    return String(type).startsWith('webgl') ? null : getContext.call(this, type, ...rest);
+  };
+`;
+
 let server: ChildProcess | null = null;
 let browser: Browser;
 
@@ -341,6 +351,17 @@ for (const theme of THEMES) {
         await unlocked.locator('[data-testid="invite-locked"]').waitFor({ state: 'detached', timeout: 15_000 });
         await unlocked.locator('nav.tray [data-block="housebucket"]').click();
         failures.push(...(await below(unlocked, 'unlocked')));
+
+        // No 3D: the page as text. It's what a browser with no WebGPU and no WebGL gets, and its lists are the ones
+        // the page falls back to when the scene fails, which software rendering on a CI machine can make it do.
+        const plain = await context.newPage();
+        await plain.addInitScript(NO_3D);
+        await plain.goto(`${site}/${theme.query}`);
+        await plain.locator('[data-static-standards]').waitFor();
+        await plain.locator('[data-static-every] summary').click();
+        await plain.locator('[data-arrangement]').first().waitFor();
+        failures.push(...(await below(plain, 'text only')));
+        if (screens) await plain.screenshot({ path: join(screens, `${theme.name}-${size.name}-3.png`), fullPage: true });
 
         assert.deepStrictEqual(failures, []);
       } finally {
