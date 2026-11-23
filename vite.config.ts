@@ -20,7 +20,7 @@ const SHAREABLE_THREE = 'virtual:three-shareable';
  * src/three-compat.ts name by name, leaving out STRIPPED. The names are read from the installed
  * three at build time, so the list can't go stale. A module that names a stripped export itself
  * (three-stdlib's TextGeometry is the only one today) gets src/three-compat.ts, where those names
- * are inert stand-ins; the page never runs it and Rollup drops it.
+ * are inert stand-ins; the page never runs it and Rolldown drops it.
  */
 function shareableThree(): Plugin {
   return {
@@ -84,8 +84,8 @@ export default defineConfig(({ command }) => {
       target: 'es2022',
       chunkSizeWarningLimit: 4000,
       // drei and three-stdlib name a few WebGL-only exports in modules this page never runs.
-      // Rollup shims them for the build. The dev server needs src/three-compat.ts as well.
-      rollupOptions: { shimMissingExports: true },
+      // Rolldown shims them for the build. The dev server needs src/three-compat.ts as well.
+      rolldownOptions: { shimMissingExports: true },
     },
   };
 });
