@@ -2,7 +2,7 @@
 
 ![The builder with all seven pieces snapped onto the plate: Hosting, Database, KVStore, the HouseBucket custom Block, Agent, Realtime and Auth, joined by lit lines to the app's API, shared function, shared role and config file. The counter reads 115 resources and 20 connections from 18 lines of TypeScript.](assets/builder-hero.webp)
 
-This is a sample app that shows what [AWS CDK Blocks](https://github.com/aws/cdk-blocks) create. On screen the app calls itself Baseplate. A visitor snaps five Blocks, the Hosting construct and one custom Block onto a baseplate in 3D and opens each one to see the AWS resources behind it. The numbers on the page come from real `cdk synth` runs that are stored in the repository as data.
+This is a sample app that shows what [AWS CDK Blocks](https://github.com/aws/cdk-blocks) create. Its browser tab and its stack name call it Baseplate. A visitor snaps five Blocks, the Hosting construct and one custom Block onto a baseplate in 3D and opens each one to see the AWS resources behind it. The numbers on the page come from real `cdk synth` runs that are stored in the repository as data.
 
 The app is itself built on CDK Blocks, so it's also an example of a small deployed Blocks app: an agent, live updates, key-value stores, a scheduled job, a secret, metrics, a dashboard and static hosting. It uses release 1.0.0: the `aws-cdk-blocks` package and the packages under the `@aws-cdk-blocks` npm scope. The [AWS CDK Blocks Developer Guide](https://docs.aws.amazon.com/cdk/blocks/devguide/what-is-blocks.html) describes each Block.
 
@@ -10,7 +10,7 @@ This is sample code, for non-production usage. You should work with your securit
 
 ## What it does
 
-![The Agent Block opened on the plate. Five tiles above it show what it creates: managed AI services, three managed tables, a storage bucket, managed WebSockets and a managed secret. A list under the plate names its nine connections.](assets/block-open-agent.webp)
+![The Hosting construct opened on the plate. Six tiles above it show what it creates: a content delivery network, two storage buckets, three edge functions, an edge key-value store, an alarm and a notification topic. Database, KVStore, the HouseBucket custom Block and Agent are on the plate behind it.](assets/block-open-hosting.webp)
 
 The builder works in the browser with no backend call. The backend adds four things:
 
@@ -25,11 +25,13 @@ Saving a build and asking the agent need an invite code. Everything else is open
 
 There's no hosted copy of this app. To see it, run it on your machine or deploy your own.
 
-<p align="center"><img src="assets/builder-mobile.webp" width="270" alt="The builder at phone width, 384 pixels: the plate with five pieces on top and the tray of pieces under it."> <img src="assets/block-open-mobile.webp" width="270" alt="The Hosting construct opened at phone width: a content delivery network, two storage buckets, three edge functions, an edge key-value store, an alarm and a notification topic."></p>
+<p align="center"><img src="assets/builder-mobile.webp" width="270" alt="The builder at phone width, 384 pixels: the plate with five pieces on top and the tray of pieces under it."> <img src="assets/block-open-mobile.webp" width="270" alt="The Realtime Block opened at phone width: managed WebSockets, three WebSocket routes, a managed table and a managed secret."></p>
 
 ## Architecture
 
-![Architecture diagram of the stack that the deploy creates. A browser loads the page from a CloudFront distribution backed by an S3 bucket. CloudFront passes API calls to an API Gateway REST API and on to one Lambda function, and open pages hold a connection to an API Gateway WebSocket API. The function uses seven DynamoDB tables, two Secrets Manager secrets, an Amazon Bedrock AgentCore runtime that calls a model in Amazon Bedrock, and the HouseBucket custom Block's S3 bucket with its own KMS key. EventBridge Scheduler runs the function every minute, and CloudWatch alarms notify an SNS topic.](assets/architecture.png)
+![Architecture diagram of the stack that the deploy creates, with nine numbered paths. The list under it describes each one.](assets/architecture.png)
+
+<ol><li>The browser loads the page from CloudFront, which serves the built files from a private S3 bucket.</li><li>API calls go through CloudFront to the API Gateway REST API (<code>/cdk-blocks/api</code>) and on to the app's one Lambda function.</li><li>Open pages hold a connection to the API Gateway WebSocket API. The function pushes new gallery builds and the here-now count back through it.</li><li>The function reads and writes seven DynamoDB tables: builds, counters, proposals, the HouseBucket's audit trail, and three that the Agent Block keeps.</li><li>It reads the invite code from Secrets Manager. A second secret there signs the Realtime Block's channel tokens.</li><li>A question for the agent runs the Amazon Bedrock AgentCore runtime, which calls Claude Haiku 5.5 in Amazon Bedrock.</li><li>EventBridge Scheduler runs the function once a minute.</li><li>That run writes the gallery snapshot to the HouseBucket's S3 bucket, which is encrypted with its own KMS key.</li><li>Three CloudWatch alarms notify an SNS topic. Nobody is subscribed until you add an address.</li></ol><p>The stack has seven S3 buckets, and the diagram draws two of them: the site bucket and the gallery bucket. The other five are an access-log bucket for each of those two, the bucket that holds the app's config file, that bucket's own log bucket, and one that the Agent Block keeps. Also in the template's 155 resources and not drawn: 13 IAM roles, 10 deploy-time helper functions, a Step Functions state machine, three CloudFront functions with an edge key-value store, a second KMS key for the alarm topic and three log groups.</p>
 
 | Block | Job here |
 |---|---|
@@ -55,9 +57,7 @@ Where things are:
 - `AGENTS.md` is a guide for coding agents working in this repository or a fork.
 - `docs/threat-model.tc.json` is the threat model, as a [Threat Composer](https://github.com/awslabs/threat-composer) file. Import it into Threat Composer to read it.
 
-The gallery snapshot file has no reader in the app. The scheduled job writes it to show a custom Block doing real work.
-
-The builder shows the same custom Block. Opened, it lists what each of the four standards adds or changes, and what the Block changes in the app around it:
+The gallery snapshot file has no reader in the app. The scheduled job writes it to show a custom Block doing real work. The builder shows the same custom Block. Opened, it lists what each of the four standards adds or changes, and what the Block changes in the app around it:
 
 ![The HouseBucket custom Block opened in the builder. Four tiles show your files, access logs, your own key and an audit trail, each marked with the standard that added or changed it. A panel headed Outside this Block lists the statements the Block adds to the app's shared role.](assets/custom-block-outside.webp)
 

@@ -1,6 +1,6 @@
 # Agent guide
 
-This repository is a sample: a 3D builder for AWS CDK Blocks that is itself a small CDK Blocks app. The app's on-screen name is Baseplate. A visitor snaps seven pieces onto a plate and sees the AWS resources each one creates. Read `README.md` first for what it does, how to deploy it, what it costs and how to take it down. This file is the short list a coding agent needs before it changes anything, whether you're working here or in a fork.
+This repository is a sample: a 3D builder for AWS CDK Blocks that is itself a small CDK Blocks app. The app's name in the browser tab and in its stack is Baseplate. A visitor snaps seven pieces onto a plate and sees the AWS resources each one creates. Read `README.md` first for what it does, how to deploy it, what it costs and how to take it down. This file is the short list a coding agent needs before it changes anything, whether you're working here or in a fork.
 
 The CDK Blocks packages are `aws-cdk-blocks`, which re-exports every Block, and the ones under the npm scope `@aws-cdk-blocks`. The source is at https://github.com/aws/cdk-blocks. Keep package names, import paths and commands exactly as they are.
 
