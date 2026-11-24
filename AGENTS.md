@@ -25,7 +25,7 @@ The CDK Blocks packages are `aws-cdk-blocks`, which re-exports every Block, and 
 | `src/variants.ts`, `src/theme-flat.ts` | Look variants. `?theme=flat` is the only one |
 | `test/` | `e2e.test.ts` and `caps.test.ts` need the local dev server; `connections.test.ts`, `custom.test.ts` and `backend.test.ts` don't |
 | `scripts/` | `setup.mjs` (first-run stack id), `split-page-data.mjs`, `scan.sh` |
-| `assets/` | The README's screenshots and its architecture diagram. `architecture.drawio` is the diagram's source; export `architecture.png` from it after a change to what the stack creates |
+| `assets/` | The README's demo animation, its screenshots and its architecture diagram. `architecture.drawio` is the diagram's source; export `architecture.png` from it after a change to what the stack creates |
 | `docs/threat-model.tc.json` | The threat model, a Threat Composer file (github.com/awslabs/threat-composer). Update it when a change crosses a trust boundary |
 
 The AWS CDK Blocks Developer Guide is at https://docs.aws.amazon.com/cdk/blocks/devguide/what-is-blocks.html. Block documentation is also installed with the packages: `node_modules/aws-cdk-blocks/docs/<block>/README.md`. Read a Block's README before you use it.

@@ -1,6 +1,6 @@
 # 3D builder for AWS CDK Blocks
 
-![The builder with all seven pieces snapped onto the plate: Hosting, Database, KVStore, the HouseBucket custom Block, Agent, Realtime and Auth, joined by lit lines to the app's API, shared function, shared role and config file. The counter reads 115 resources and 20 connections from 18 lines of TypeScript.](assets/builder-hero.webp)
+![Animation of the builder. Blocks snap onto the plate one at a time while the counter climbs from 1 resource to 115, the view turns around the finished plate, and the Agent Block opens to show the resources it creates.](assets/demo.gif)
 
 This is a sample app that shows what [AWS CDK Blocks](https://github.com/aws/cdk-blocks) create. Its browser tab and its stack name call it Baseplate. A visitor snaps five Blocks, the Hosting construct and one custom Block onto a baseplate in 3D and opens each one to see the AWS resources behind it. The numbers on the page come from real `cdk synth` runs that are stored in the repository as data.
 
@@ -53,7 +53,7 @@ Where things are:
 - `packages/bb-house-bucket/` is the custom Block, a workspace package. It isn't published to npm, and the app depends on it by path.
 - `cdk-blocks/fresh-secret.ts` reads the invite code so that a running copy of the function follows a replaced secret. `cdk-blocks/handler-guards.ts` sets what the deployed function logs at which level.
 - `test/` has the tests. `scripts/` has the first-run setup, the page-data splitter and the scan script.
-- `assets/` has this page's screenshots and the architecture diagram. `assets/architecture.drawio` is the diagram's source; it opens in [draw.io](https://www.drawio.com/).
+- `assets/` has this page's demo animation, its screenshots and the architecture diagram. `assets/architecture.drawio` is the diagram's source; it opens in [draw.io](https://www.drawio.com/).
 - `AGENTS.md` is a guide for coding agents working in this repository or a fork.
 - `docs/threat-model.tc.json` is the threat model, as a [Threat Composer](https://github.com/awslabs/threat-composer) file. Import it into Threat Composer to read it.
 
