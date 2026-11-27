@@ -378,7 +378,7 @@ test("marks: a change shows the template's own values, and what the custom piece
     exact['Properties.Tags'].rows.map((r) => `${r.path}=${r.after}`),
     ['cost-center=cc-4410', 'data-classification=internal', 'owner=intake-team'],
   );
-  // Every arrangement adds statements to the app's shared role. On CDK Blocks 1.0.0 none of them spills into a second
+  // Every arrangement adds statements to the app's shared role. On CDK Blocks 1.0.1, as on 1.0.0, none of them spills into a second
   // policy; on the earlier release 12 arrangements with the Agent Block did.
   let overflow = 0;
   for (const key of CUSTOM_KEYS) {

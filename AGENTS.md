@@ -1,6 +1,6 @@
 # Agent guide
 
-This repository is a sample: a 3D builder for AWS CDK Blocks that is itself a small CDK Blocks app. The app's name in the browser tab and in its stack is Baseplate. A visitor snaps seven pieces onto a plate and sees the AWS resources each one creates. Read `README.md` first for what it does, how to deploy it, what it costs and how to take it down. This file is the short list a coding agent needs before it changes anything, whether you're working here or in a fork.
+This repository is a sample: a 3D builder for AWS CDK Blocks that is itself a small CDK Blocks app. The app's name in the browser tab and in its stack is Baseplate. A visitor snaps seven pieces onto a plate and sees the AWS resources each one creates. Read `README.md` first for what it does and how to run and deploy it. `docs/deploy.md`, `docs/costs.md`, `docs/teardown.md` and `docs/security.md` have the detail. This file is the short list a coding agent needs before it changes anything, whether you're working here or in a fork.
 
 The CDK Blocks packages are `aws-cdk-blocks`, which re-exports every Block, and the ones under the npm scope `@aws-cdk-blocks`. The source is at https://github.com/aws/cdk-blocks. Keep package names, import paths and commands exactly as they are.
 
@@ -26,6 +26,7 @@ The CDK Blocks packages are `aws-cdk-blocks`, which re-exports every Block, and 
 | `test/` | `e2e.test.ts` and `caps.test.ts` need the local dev server; `connections.test.ts`, `custom.test.ts` and `backend.test.ts` don't |
 | `scripts/` | `setup.mjs` (first-run stack id), `split-page-data.mjs`, `scan.sh` |
 | `assets/` | The README's demo animation, its screenshots and its architecture diagram. `architecture.drawio` is the diagram's source; export `architecture.png` from it after a change to what the stack creates |
+| `docs/` | The pages the README links to: deploying, costs, teardown, security notes and working on the code. A test checks that every link between them and the README resolves |
 | `docs/threat-model.tc.json` | The threat model, a Threat Composer file (github.com/awslabs/threat-composer). Update it when a change crosses a trust boundary |
 
 The AWS CDK Blocks Developer Guide is at https://docs.aws.amazon.com/cdk/blocks/devguide/what-is-blocks.html. Block documentation is also installed with the packages: `node_modules/aws-cdk-blocks/docs/<block>/README.md`. Read a Block's README before you use it.
@@ -59,8 +60,8 @@ Locally every Block runs its local implementation with no AWS account, and keeps
 ## Deploy and destroy
 
 ```bash
-npm run deploy       # needs AWS credentials, a bootstrapped account and Bedrock model access (see README)
-npm run destroy      # removes the stack. It doesn't ask first. The README's "Tear it down" section lists what stays
+npm run deploy       # needs AWS credentials, a bootstrapped account and Bedrock model access (see docs/deploy.md)
+npm run destroy      # removes the stack. It doesn't ask first. `docs/teardown.md` lists what stays
 ```
 
 Four variables change a deploy. `cdk-blocks/deploy-options.ts` reads them and `test/backend.test.ts` covers them.

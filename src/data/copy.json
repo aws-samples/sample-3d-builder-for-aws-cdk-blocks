@@ -1,5 +1,5 @@
 {
-  "caseNote": "Each Block, the Hosting construct and the custom Block, alone on the \"backend\" template of create-blocks-app 1.0.0 with default options and the production preset (BlocksPresets.production, what npm run deploy synthesizes), counted as resources added to a no-Blocks baseline.",
+  "caseNote": "Each Block, the Hosting construct and the custom Block, alone on the \"backend\" template of create-blocks-app 1.0.1 with default options and the production preset (BlocksPresets.production, what npm run deploy synthesizes), counted as resources added to a no-Blocks baseline.",
   "blocks": {
     "hosting": {
       "note": "Default CloudFront front door with a one-page static site; the Hosting construct goes in cdk-blocks/index.cdk.ts, takes the stack rather than the scope, and the templates leave it out of a plain sandbox."

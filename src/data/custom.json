@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "readAt": "2026-11-21",
+ "readAt": "2026-11-27",
  "note": "Every resource, property and line of TypeScript here comes from a real cdk synth (production preset, no AWS credentials) or from the generated source that was typechecked and synthesized. Made by tools/derive.mjs.",
  "piece": {
   "id": "housebucket",

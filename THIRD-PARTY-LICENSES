@@ -1958,10 +1958,10 @@ The following npm packages may be included in this product:
  - @aws-cdk-blocks/bb-realtime@1.0.0
  - @aws-cdk-blocks/bb-secret@1.0.0
  - @aws-cdk-blocks/bb-tracer@1.0.0
- - @aws-cdk-blocks/core@1.0.0
+ - @aws-cdk-blocks/core@1.0.1
  - @aws-cdk-blocks/hosting@1.0.0
  - @aws-cdk-blocks/pipeline@1.0.0
- - aws-cdk-blocks@1.0.0
+ - aws-cdk-blocks@1.0.1
 
 These packages each contain the following license:
 

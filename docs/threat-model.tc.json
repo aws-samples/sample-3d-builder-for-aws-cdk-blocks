@@ -2,7 +2,7 @@
   "schema": 1,
   "applicationInfo": {
     "name": "3D builder for AWS CDK Blocks (sample)",
-    "description": "Threat model version: 5\n\n### What we're working on\n\nThis repository is sample code: a 3D builder for AWS CDK Blocks, with the on-screen name Baseplate. A visitor places Blocks on a plate in the browser and sees the AWS resources each one creates. The builder itself runs in the browser from bundled data. The backend adds an agent that picks pieces, saved builds with share links, a live gallery and a here-now count.\n\nA person who clones the repository deploys it into their own AWS account. AWS hosts no running copy. The sample isn't meant for production use.\n\n### Scope\n\nIn scope: the code on this branch, the stack it synthesizes (155 resources), and what a stranger inherits by deploying it or copying from it. Out of scope: the deployer's account settings outside the stack (CloudTrail, budgets, other workloads), and the insides of the CDK Blocks library beyond what the stack shows.\n\n### How to read this file\n\nThe method is the four questions of the AWS workshop \"Threat modeling for builders\". Each threat is written in the threat grammar and tagged with its trust boundary, STRIDE letters and a priority. Each mitigation carries `custom:state`, `custom:evidence` (file and line in this repository, or what the synthesized template shows) and `custom:tests` (the test that holds it and the command that runs it).\n\nA mitigation that was seen working on AWS also carries `custom:observed`. An entry that cites `live-deploy/v1/REPORT.md` is from CDK Blocks 1.0.0 (commit `6d13623`, deployed twice and destroyed once on 2026-11-21). Every other entry is from before the move to 1.0.0, when the app ran on `@aws-blocks/blocks` 0.9.0. Those earlier entries cite the maintainers' records of test deploys: `deploy-test/REPORT.md` (the public copy, cloned fresh, deployed to a new stack and destroyed on 2026-11-19) and `live-deploy/REPORT.md`, `live-deploy/REPORT-2.md` and `live-deploy/REPORT-3.md` (this branch deployed over a standing stack on 2026-11-19 and 2026-11-20). The records are kept outside this repository.\n\nEvery mitigation has the status Identified and every threat is open. That's deliberate. The method this file follows lets a mitigation be marked resolved only when it rests on behavior ids from a registry with a passing test for each id. This repository has no such registry, and this file doesn't invent ids that nothing checks. The evidence is real and is listed; each open threat's residual risk is for a person to accept, with an owner and an end date, and the approval of a version records those acceptances.\n\nStatements about deployed behavior come from the code, the local tests and a `cdk synth` on 2026-11-21 with the 1.0.0 packages, except where `custom:observed` cites a test deploy of the earlier release. Not seen on AWS: a throttled request, an alarm firing, the stale-address retry, the opt-in WAF, the retain option, and any Region but us-east-1. The CI workflow has never run.\n\n### Changes since version 4\n\nVersion 4 was approved on 2026-11-21. Threats 1 to 23 and mitigations 1 to 29 keep their numbers and ids. No threat or mitigation was added, closed or removed.\n\n- Threat 17: no advisory is ignored any more. aws-cdk-lib moved from 2.277.0 to 2.278.0, whose bundled minimatch has the fix for CVE-2026-118764, and the ignore entry was removed. The residual risk names that upgrade as a second one that didn't wait out the 7-day cooldown.\n- The table of known findings no longer lists the minimatch advisory.\n- Mitigation 23: the scan also runs npm audit and a check that every production package the lockfile installs is in THIRD-PARTY-LICENSES. A release scan had found five packages missing from that file; they're listed now and a test holds it.\n- A new row in the table of known findings records that S3-managed encryption (SSE-S3) on six of the seven buckets is accepted for this sample.\n- Threat 23 and mitigation 29: the dashboard route's redirect was seen on the 1.0.0 stack on 2026-11-21.\n- Twelve residual-risk notes now open with the words \"A residual risk to accept\" in place of their earlier opening words, and two sentences about approval in this description were reworded to say how approval works. Nothing else in them changed.\n- Every statement read from the synthesized template cites the synth of 2026-11-22 with aws-cdk-lib 2.278.0. The template has the same 155 resources as before.\n- The sample's own version is 1.0.0. No threat or mitigation depends on it.\n- Every file and line reference was located again at this commit.\n\n### Known findings that stay\n\n| Finding | Reason | Look again | Where |\n|---|---|---|---|\n| cdk-nag AwsSolutions, 16 rules in the report of 2026-11-21, report only | npm run nag prints them and isn't a gate. Nearly all sit on resources the CDK Blocks constructs create: wildcard IAM statements, managed policies, no WAF, no API access logs, no authorizer, Lambda defaults, TLSv1 on the default certificate, no secret rotation on either secret. | Each CDK Blocks upgrade | cdk-blocks/scripts/cdk-nag.ts |\n| Six of the seven buckets are encrypted with S3-managed keys (SSE-S3), which scanners report as no customer-managed key | Accepted for this sample by the maintainer on 2026-11-21: SSE-S3 is fine here. The buckets hold the built page, logs, the config file and agent session snapshots. The gallery bucket has a customer-managed key through the custom Block. These are CDK Blocks and Hosting defaults. | None set | threat 13, mitigation 17 |\n| F10, a stored file with no audit entry | The custom Block's source is generator output. The fix belongs in the generator. | None set | threat 15 |\n| F12, presence can be inflated | A fix needs an identity for each client. | None set | threat 16 |\n| F13, in part: the always-on render loop and the renderer fallback | Changing the loop alters every animation, and no browser on hand fails the way the fallback needs. | None set | threat 21 |\n| F15, in part: no Content-Security-Policy header and no API access logs | Both are CDK Blocks defaults. Access logging changes an account-wide API Gateway role. | None set | threats 14 and 20 |\n\n### Cost exposure for a deployer\n\nThese are estimates from list prices for US East (N. Virginia) on 2026-11-19. Nobody has measured them on a bill.\n\n| Case | Estimate | How it was derived |\n|---|---|---|\n| Idle stack | about 6 to 10 US dollars a month | Counted from the template: 2 KMS keys at $1.00, 1 dashboard at $3.00, 3 alarms at $0.10, 2 secrets at $0.40, plus the once-a-minute job (43,200 runs a month of a 2,048 MB function, assumed at half a second each) and small DynamoDB, S3 and log charges, each put at under $1. |\n| Agent at its daily cap | about 0.60 US dollars a day | The caps bound it: 200 questions x 4 model calls x 1,000 output tokens is at most 800,000 output tokens a day, and at the 2,400 input tokens a call that test calls used, about 1.9 million input tokens. Claude Haiku 5.5 through the global inference profile costs $0.10 per million input tokens and $0.50 per million output tokens for prompts of up to 100,000 tokens (AWS Price List for Amazon Bedrock in us-east-1, published and read 2026-11-20). That's about $0.19 plus $0.40. AgentCore runtime time isn't in it. |\n| Flood at the throttle | 10 to 15 US dollars a day | 25 requests a second for 86,400 seconds is 2.16 million requests: about $7.56 for API Gateway at $3.50 per million, $0.43 for Lambda requests, about $3.60 for Lambda time if each request takes 50 ms at 2,048 MB (an assumption), and about $2 for DynamoDB reads. |\n\n### Did we do a good enough job\n\nEvery threat links to at least one mitigation, and every mitigation names its evidence. 7 of the 29 mitigations have no test in the repository; each one's `custom:tests` says so. For each mitigation the modeler asked how it could be bypassed, and the answer is in the threat's `custom:residual`. The two threats with the most left to do are the shared throttle (threat 4) and the wide role (threat 12). A version counts once a person has reviewed and approved it.\n"
+    "description": "Threat model version: 6\n\n### What we're working on\n\nThis repository is sample code: a 3D builder for AWS CDK Blocks, with the on-screen name Baseplate. A visitor places Blocks on a plate in the browser and sees the AWS resources each one creates. The builder itself runs in the browser from bundled data. The backend adds an agent that picks pieces, saved builds with share links, a live gallery and a here-now count.\n\nA person who clones the repository deploys it into their own AWS account. AWS hosts no running copy. The sample isn't meant for production use.\n\n### Scope\n\nIn scope: the code on this branch, the stack it synthesizes (155 resources), and what a stranger inherits by deploying it or copying from it. Out of scope: the deployer's account settings outside the stack (CloudTrail, budgets, other workloads), and the insides of the CDK Blocks library beyond what the stack shows.\n\n### How to read this file\n\nThe method is the four questions of the AWS workshop \"Threat modeling for builders\". Each threat is written in the threat grammar and tagged with its trust boundary, STRIDE letters and a priority. Each mitigation carries `custom:state`, `custom:evidence` (file and line in this repository, or what the synthesized template shows) and `custom:tests` (the test that holds it and the command that runs it).\n\nA mitigation that was seen working on AWS also carries `custom:observed`. An entry that cites `live-deploy/v1/REPORT.md` is from CDK Blocks 1.0.0 (commit `6d13623`, deployed twice and destroyed once on 2026-11-21). Every other entry is from before the move to 1.0.0, when the app ran on `@aws-blocks/blocks` 0.9.0. Those earlier entries cite the maintainers' records of test deploys: `deploy-test/REPORT.md` (the public copy, cloned fresh, deployed to a new stack and destroyed on 2026-11-19) and `live-deploy/REPORT.md`, `live-deploy/REPORT-2.md` and `live-deploy/REPORT-3.md` (this branch deployed over a standing stack on 2026-11-19 and 2026-11-20). The records are kept outside this repository.\n\nEvery mitigation has the status Identified and every threat is open. That's deliberate. The method this file follows lets a mitigation be marked resolved only when it rests on behavior ids from a registry with a passing test for each id. This repository has no such registry, and this file doesn't invent ids that nothing checks. The evidence is real and is listed; each open threat's residual risk is for a person to accept, with an owner and an end date, and the approval of a version records those acceptances.\n\nStatements about deployed behavior come from the code, the local tests and a `cdk synth` on 2026-11-27 with the pinned packages (aws-cdk-blocks 1.0.1), except where `custom:observed` cites a test deploy of the earlier release. Not seen on AWS: a throttled request, an alarm firing, the stale-address retry, the opt-in WAF, the retain option, and any Region but us-east-1. The CI workflow has never run.\n\n### Changes since version 5\n\nVersion 5 was approved on 2026-11-22. Threats 1 to 23 and mitigations 1 to 29 keep their numbers and ids. No threat or mitigation was added, closed or removed, and no residual risk reads differently except threat 17's.\n\n- Threat 17: aws-cdk-blocks and @aws-cdk-blocks/core moved from 1.0.0 to 1.0.1, four days after their release. The residual risk names that as a third upgrade that didn't wait out the 7-day cooldown, and says what differs between the two releases. The other CDK Blocks packages stay at 1.0.0, which is still their latest release.\n- Every statement read from the synthesized template cites a synth of 2026-11-27 with aws-cdk-blocks 1.0.1. The template has the same 155 resources, the same IAM policy text and the same properties as the 1.0.0 synth; only asset hashes, the page build id and the version string differ.\n- The README became a short product page. The deploy, cost, teardown and security text it held moved, with its wording kept, to docs/deploy.md, docs/costs.md, docs/teardown.md and docs/security.md. Every evidence entry, mitigation and residual-risk note that cited the README for that text now cites those pages.\n- Every file and line reference was located again at this commit.\n\n### Known findings that stay\n\n| Finding | Reason | Look again | Where |\n|---|---|---|---|\n| cdk-nag AwsSolutions, 16 rules in the report of 2026-11-21, report only | npm run nag prints them and isn't a gate. Nearly all sit on resources the CDK Blocks constructs create: wildcard IAM statements, managed policies, no WAF, no API access logs, no authorizer, Lambda defaults, TLSv1 on the default certificate, no secret rotation on either secret. | Each CDK Blocks upgrade | cdk-blocks/scripts/cdk-nag.ts |\n| Six of the seven buckets are encrypted with S3-managed keys (SSE-S3), which scanners report as no customer-managed key | Accepted for this sample by the maintainer on 2026-11-21: SSE-S3 is fine here. The buckets hold the built page, logs, the config file and agent session snapshots. The gallery bucket has a customer-managed key through the custom Block. These are CDK Blocks and Hosting defaults. | None set | threat 13, mitigation 17 |\n| F10, a stored file with no audit entry | The custom Block's source is generator output. The fix belongs in the generator. | None set | threat 15 |\n| F12, presence can be inflated | A fix needs an identity for each client. | None set | threat 16 |\n| F13, in part: the always-on render loop and the renderer fallback | Changing the loop alters every animation, and no browser on hand fails the way the fallback needs. | None set | threat 21 |\n| F15, in part: no Content-Security-Policy header and no API access logs | Both are CDK Blocks defaults. Access logging changes an account-wide API Gateway role. | None set | threats 14 and 20 |\n\n### Cost exposure for a deployer\n\nThese are estimates from list prices for US East (N. Virginia) on 2026-11-19. Nobody has measured them on a bill.\n\n| Case | Estimate | How it was derived |\n|---|---|---|\n| Idle stack | about 6 to 10 US dollars a month | Counted from the template: 2 KMS keys at $1.00, 1 dashboard at $3.00, 3 alarms at $0.10, 2 secrets at $0.40, plus the once-a-minute job (43,200 runs a month of a 2,048 MB function, assumed at half a second each) and small DynamoDB, S3 and log charges, each put at under $1. |\n| Agent at its daily cap | about 0.60 US dollars a day | The caps bound it: 200 questions x 4 model calls x 1,000 output tokens is at most 800,000 output tokens a day, and at the 2,400 input tokens a call that test calls used, about 1.9 million input tokens. Claude Haiku 5.5 through the global inference profile costs $0.10 per million input tokens and $0.50 per million output tokens for prompts of up to 100,000 tokens (AWS Price List for Amazon Bedrock in us-east-1, published and read 2026-11-20). That's about $0.19 plus $0.40. AgentCore runtime time isn't in it. |\n| Flood at the throttle | 10 to 15 US dollars a day | 25 requests a second for 86,400 seconds is 2.16 million requests: about $7.56 for API Gateway at $3.50 per million, $0.43 for Lambda requests, about $3.60 for Lambda time if each request takes 50 ms at 2,048 MB (an assumption), and about $2 for DynamoDB reads. |\n\n### Did we do a good enough job\n\nEvery threat links to at least one mitigation, and every mitigation names its evidence. 7 of the 29 mitigations have no test in the repository; each one's `custom:tests` says so. For each mitigation the modeler asked how it could be bypassed, and the answer is in the threat's `custom:residual`. The two threats with the most left to do are the shared throttle (threat 4) and the wide role (threat 12). A version counts once a person has reviewed and approved it.\n"
   },
   "architecture": {
     "description": "### Components\n\n- **Page**: a React 19 and React Three Fiber single-page app, built by Vite and served from a private S3 bucket through CloudFront (the Hosting construct). CloudFront also forwards `/cdk-blocks/api`, the other paths under `/cdk-blocks/` that CDK Blocks reserves, and the earlier prefix `/aws-blocks/*` to the API.\n- **API**: one API Gateway REST API with no authorizer, in front of one Lambda function (Node.js 24, 2,048 MB). Every API method is the same route, `POST /cdk-blocks/api`, dispatched by name; `/aws-blocks/api` is an alias that CDK Blocks 1.0 keeps. The function also answers three built-in GET routes of CDK Blocks, `/cdk-blocks/dashboard`, `/cdk-blocks/resources` and `/cdk-blocks/settings`, each with a redirect to the AWS console. Open methods: `getApp`, `joinGallery`, `listGallery`, `getBuild`, `heartbeat`, `checkInvite`, `getProposal`. Methods that need the invite code: `saveBuild`, `agentCreateConversationId`, `agentGetChannel`, `agentStream`, `agentGetConversation`.\n- **Realtime**: one API Gateway WebSocket API (the Realtime block) for the gallery channel and the agent's streaming channels.\n- **Agent**: the Agent block, running on Amazon Bedrock AgentCore and calling Anthropic Claude Haiku 5.5 through its global inference profile, `global.anthropic.claude-haiku-5-5`. The model thinks before it answers; the thinking counts toward each call's output cap and isn't shown on the page. Its three tools are `browseCatalog`, `snapPieces` and a local stand-in.\n- **Stores**: seven DynamoDB tables (builds, counters, proposals, the agent's conversations and messages, realtime connections, the gallery audit trail) and seven S3 buckets (site, gallery files, agent snapshots, config, and three log buckets).\n- **Secrets**: two Secrets Manager secrets, both generated at deploy: the invite code, and the key the Realtime block signs channel tokens with.\n- **Scheduled job**: an EventBridge Scheduler schedule that runs the same function once a minute to pick the build of the hour and write the gallery snapshot through the custom Block, HouseBucket.\n- **Observability**: a Logger, Metrics, a CloudWatch dashboard, three alarms and one SNS topic.\n- **Identity**: one IAM role shared by the API function, the scheduled job and the AgentCore runtime.\n\n### What the deployer chooses\n\n`BASEPLATE_TAGS`, `BASEPLATE_RETAIN_DATA`, `BASEPLATE_API_WAF` and `BASEPLATE_ALARM_EMAIL`, read from the environment at deploy.\n"
@@ -39,7 +39,7 @@
       "id": "712da304-7631-5c22-b336-f4d476deed74",
       "numericId": 5,
       "displayOrder": 5,
-      "content": "The CDK Blocks packages behave as their pinned versions read on 2026-11-21: aws-cdk-blocks 1.0.0 and, under @aws-cdk-blocks, core, bb-agent, bb-realtime, bb-kv-store, bb-secret and hosting 1.0.0."
+      "content": "The CDK Blocks packages behave as their pinned versions read on 2026-11-21 and 2026-11-27: aws-cdk-blocks 1.0.1 and @aws-cdk-blocks/core 1.0.1, and, under @aws-cdk-blocks, bb-agent, bb-realtime, bb-kv-store, bb-secret and hosting 1.0.0, which is still the latest release of each."
     },
     {
       "id": "38b452c9-9c9e-5102-9c5e-7e431c54c18a",
@@ -124,7 +124,7 @@
             "cdk-blocks/index.ts:356",
             "cdk-blocks/index.ts:359",
             "cdk-blocks/index.ts:336",
-            "Synthesized template: the secret has GenerateSecretString with no fixed value (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)",
+            "Synthesized template: the secret has GenerateSecretString with no fixed value (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)",
             "cdk-blocks/index.ts:357"
           ]
         },
@@ -206,7 +206,7 @@
             "cdk-blocks/shared.ts:98",
             "cdk-blocks/shared.ts:99",
             "cdk-blocks/index.cdk.ts:52",
-            "Synthesized template: ThrottlingRateLimit 25 and ThrottlingBurstLimit 50 on both stages (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+            "Synthesized template: ThrottlingRateLimit 25 and ThrottlingBurstLimit 50 on both stages (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)"
           ]
         },
         {
@@ -247,7 +247,7 @@
             "cdk-blocks/index.cdk.ts:130",
             "cdk-blocks/index.cdk.ts:77 (the opt-in email)",
             "cdk-blocks/shared.ts:101",
-            "Synthesized template: both alarms list the topic under AlarmActions (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+            "Synthesized template: both alarms list the topic under AlarmActions (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)"
           ]
         },
         {
@@ -381,7 +381,7 @@
             "cdk-blocks/index.ts:201 (the expiry on the write)",
             "cdk-blocks/index.ts:306",
             "packages/bb-house-bucket/src/runtime.ts:111",
-            "Synthesized template: TimeToLiveSpecification is on for 7 of 7 tables. The app writes an expiry to the proposals, counters and gallery audit tables, and the Realtime Block to its connections table. The app writes none to builds, and it sets none for the Agent Block's conversations and messages (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+            "Synthesized template: TimeToLiveSpecification is on for 7 of 7 tables. The app writes an expiry to the proposals, counters and gallery audit tables, and the Realtime Block to its connections table. The app writes none to builds, and it sets none for the Agent Block's conversations and messages (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)"
           ]
         },
         {
@@ -537,7 +537,7 @@
             "cdk-blocks/index.ts:684",
             "cdk-blocks/index.ts:606",
             "node_modules/@aws-cdk-blocks/bb-realtime/dist/index.aws.js: the message handler acts on subscribe, unsubscribe and ping, and subscribe calls validateChannelToken with a key read from the Block's own Secrets Manager secret (library code, read on 2026-11-21)",
-            "Synthesized template: a second secret, under the Agent's Realtime at guide/rt/token-secret, with a generated 64-character value; the shared role may read it (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+            "Synthesized template: a second secret, under the Agent's Realtime at guide/rt/token-secret, with a generated 64-character value; the shared role may read it (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)"
           ]
         },
         {
@@ -605,7 +605,7 @@
         },
         {
           "key": "custom:tests",
-          "value": ["test/backend.test.ts:700 \"page: it says that agent questions are kept\" (npm run check)"]
+          "value": ["test/backend.test.ts:762 \"page: it says that agent questions are kept\" (npm run check)"]
         }
       ]
     },
@@ -630,7 +630,7 @@
             "packages/bb-house-bucket/src/index.cdk.ts:41",
             "packages/bb-house-bucket/src/index.cdk.ts:43",
             "packages/bb-house-bucket/src/rules.ts:20",
-            "Synthesized template: PublicAccessBlockConfiguration with all four settings on and BucketEncryption on 7 of 7 buckets; SSESpecification and PointInTimeRecoverySpecification on 7 of 7 tables; EnableKeyRotation on both keys (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+            "Synthesized template: PublicAccessBlockConfiguration with all four settings on and BucketEncryption on 7 of 7 buckets; SSESpecification and PointInTimeRecoverySpecification on 7 of 7 tables; EnableKeyRotation on both keys (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)"
           ]
         },
         {
@@ -655,7 +655,7 @@
       "metadata": [
         {
           "key": "Comments",
-          "value": "Outside the stack, and left after destroy: log groups Lambda makes for helper functions, the log group Amazon Bedrock AgentCore makes for the runtime (no expiry), and the CDK bootstrap stack's files. The README lists them."
+          "value": "Outside the stack, and left after destroy: log groups Lambda makes for helper functions, the log group Amazon Bedrock AgentCore makes for the runtime (no expiry), and the CDK bootstrap stack's files. docs/teardown.md lists them."
         },
         {
           "key": "custom:state",
@@ -667,8 +667,8 @@
             "cdk-blocks/index.cdk.ts:51",
             "cdk-blocks/deploy-options.ts:39",
             "packages/bb-house-bucket/src/index.cdk.ts:52",
-            "Synthesized template: no table, bucket or key and neither secret has a Retain policy, and deletion protection is off on 7 of 7 tables. Five Custom::CDKBucketDeployment resources of the Hosting construct do carry Retain; they hold no data (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)",
-            "README.md:233"
+            "Synthesized template: no table, bucket or key and neither secret has a Retain policy, and deletion protection is off on 7 of 7 tables. Five Custom::CDKBucketDeployment resources of the Hosting construct do carry Retain; they hold no data (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)",
+            "docs/teardown.md:24"
           ]
         },
         {
@@ -691,7 +691,7 @@
       "numericId": 19,
       "displayOrder": 19,
       "status": "mitigationIdentified",
-      "content": "No API method takes a model id, a runtime ARN or any other AWS resource name from the caller. The model is a constant in the Agent's configuration and the runtime is the one the stack creates. The README and the page both say the role is wider than the app needs.",
+      "content": "No API method takes a model id, a runtime ARN or any other AWS resource name from the caller. The model is a constant in the Agent's configuration and the runtime is the one the stack creates. docs/security.md and the page both say the role is wider than the app needs.",
       "metadata": [
         {
           "key": "Comments",
@@ -705,8 +705,8 @@
           "key": "custom:evidence",
           "value": [
             "cdk-blocks/index.ts:217",
-            "README.md:203",
-            "Synthesized template: the role's policy allows bedrock-agentcore:InvokeAgentRuntime on runtime/* in the account and Region, and bedrock:InvokeModel on every foundation model and inference profile (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+            "docs/security.md:31",
+            "Synthesized template: the role's policy allows bedrock-agentcore:InvokeAgentRuntime on runtime/* in the account and Region, and bedrock:InvokeModel on every foundation model and inference profile (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)"
           ]
         },
         {
@@ -730,7 +730,7 @@
       "metadata": [
         {
           "key": "Comments",
-          "value": "With the default CloudFront certificate the security policy is fixed at TLSv1, so the distribution accepts TLS 1.0 and later. A custom domain and certificate raise it. The README says so, and the synth prints a warning."
+          "value": "With the default CloudFront certificate the security policy is fixed at TLSv1, so the distribution accepts TLS 1.0 and later. A custom domain and certificate raise it. docs/security.md says so, and the synth prints a warning."
         },
         {
           "key": "custom:state",
@@ -739,8 +739,8 @@
         {
           "key": "custom:evidence",
           "value": [
-            "Synthesized template: a Deny on aws:SecureTransport false in 7 of 7 bucket policies; ViewerProtocolPolicy redirect-to-https on every behavior; OriginProtocolPolicy https-only with TLSv1.2 (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)",
-            "README.md:205"
+            "Synthesized template: a Deny on aws:SecureTransport false in 7 of 7 bucket policies; ViewerProtocolPolicy redirect-to-https on every behavior; OriginProtocolPolicy https-only with TLSv1.2 (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)",
+            "docs/security.md:33"
           ]
         },
         {
@@ -781,7 +781,7 @@
             "cdk-blocks/index.handler.ts:8",
             "cdk-blocks/index.ts:387",
             "cdk-blocks/index.ts:166",
-            "Synthesized template: the distribution has a Logging bucket; log groups have RetentionInDays 365 (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+            "Synthesized template: the distribution has a Logging bucket; log groups have RetentionInDays 365 (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)"
           ]
         },
         {
@@ -790,8 +790,8 @@
             "test/backend.test.ts:538 \"logs: a refused request is one warn line with no stack trace, and a fault stays an error\" (npm run check)",
             "test/backend.test.ts:593 \"logs: a scheduled run before the config is readable is skipped with one warn line\" (npm run check)",
             "test/backend.test.ts:623 \"logs: the handler installs both guards, the backend throws its refusals as one class\" (npm run check)",
-            "test/backend.test.ts:836 \"logs: a WebSocket message from a page that already left is one warn line\" (npm run check)",
-            "test/backend.test.ts:883 \"logs: the handler installs the closed-connection guard\" (npm run check)"
+            "test/backend.test.ts:898 \"logs: a WebSocket message from a page that already left is one warn line\" (npm run check)",
+            "test/backend.test.ts:945 \"logs: the handler installs the closed-connection guard\" (npm run check)"
           ]
         },
         {
@@ -880,7 +880,7 @@
         {
           "key": "custom:tests",
           "value": [
-            "test/backend.test.ts:909 \"licenses: every production package the lockfile installs is in the third-party file\" (npm run check)"
+            "test/backend.test.ts:971 \"licenses: every production package the lockfile installs is in the third-party file\" (npm run check)"
           ]
         }
       ]
@@ -900,13 +900,13 @@
           "key": "custom:evidence",
           "value": [
             "package.json:70",
-            "package-lock.json:5055 (resolved packages/bb-house-bucket, link true)",
+            "package-lock.json:4605 (resolved packages/bb-house-bucket, link true)",
             "packages/bb-house-bucket/package.json:48"
           ]
         },
         {
           "key": "custom:tests",
-          "value": ["test/backend.test.ts:688 \"package: the custom Block is a file dependency\" (npm run check)"]
+          "value": ["test/backend.test.ts:750 \"package: the custom Block is a file dependency\" (npm run check)"]
         }
       ]
     },
@@ -963,8 +963,8 @@
           "value": [
             "cdk-blocks/index.cdk.ts:50",
             "node_modules/@aws-cdk-blocks/core/dist/cors.js and dispatch.js: isOriginAllowed and corsRejection (library code, read on 2026-11-21)",
-            "Synthesized template: the function's environment sets CORS_HOSTING_ORIGINS and no CORS_ALLOWED_ORIGINS (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)",
-            "Synthesized template: ResponseHeadersPolicyId 67f7725c-6f97-4210-82d7-5512b31e9d03, the managed SecurityHeadersPolicy, on all 8 behaviors: the default one, six under /cdk-blocks/ and the /aws-blocks/* alias (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)"
+            "Synthesized template: the function's environment sets CORS_HOSTING_ORIGINS and no CORS_ALLOWED_ORIGINS (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)",
+            "Synthesized template: ResponseHeadersPolicyId 67f7725c-6f97-4210-82d7-5512b31e9d03, the managed SecurityHeadersPolicy, on all 8 behaviors: the default one, six under /cdk-blocks/ and the /aws-blocks/* alias (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)"
           ]
         },
         {
@@ -1000,7 +1000,7 @@
         },
         {
           "key": "custom:tests",
-          "value": ["test/backend.test.ts:708 \"scene: the shadow textures and link materials are freed on unmount\" (npm run check)"]
+          "value": ["test/backend.test.ts:770 \"scene: the shadow textures and link materials are freed on unmount\" (npm run check)"]
         }
       ]
     },
@@ -1027,7 +1027,7 @@
             "cdk-blocks/fresh-secret.ts:58",
             "cdk-blocks/index.ts:340",
             "cdk-blocks/index.ts:358",
-            "README.md:140"
+            "docs/deploy.md:50"
           ]
         },
         {
@@ -1068,7 +1068,7 @@
           "value": [
             "node_modules/@aws-cdk-blocks/core/dist/builtin-routes.js: /cdk-blocks/resources and /cdk-blocks/settings answer 302 with the address in BB_RESOURCES_GROUP_URL and BB_SETTINGS_GROUP_URL, and lambda-handler.js registers them (library code, read on 2026-11-21)",
             "node_modules/@aws-cdk-blocks/bb-dashboard/dist/routes.js: /cdk-blocks/dashboard answers 302 with the address in BB_DASHBOARD_URL (library code, read on 2026-11-21)",
-            "Synthesized template: the three addresses are console URLs built from the Region and the stack name, for example the dashboard named after the stack; none holds an account id (cdk synth of this branch on 2026-11-22 with aws-cdk-blocks 1.0.0 and aws-cdk-lib 2.278.0, 155 resources, read by the modeler)",
+            "Synthesized template: the three addresses are console URLs built from the Region and the stack name, for example the dashboard named after the stack; none holds an account id (cdk synth of this branch on 2026-11-27 with aws-cdk-blocks 1.0.1 and aws-cdk-lib 2.278.0, 155 resources; it equals the synth of 2026-11-22 on 1.0.0 that the modeler read, apart from asset hashes, the page build id and the version string)",
             "cdk-blocks/index.ts:166"
           ]
         },
@@ -1473,7 +1473,7 @@
         },
         {
           "key": "custom:residual",
-          "value": "A residual risk to accept, by design. One shared code isn't a sign-in, and the per-page limit keys on an id the browser picks. The README says so and documents rotation. The old code keeps working for up to five minutes after a change because the backend caches it; in the test deploy it was refused within 50 seconds."
+          "value": "A residual risk to accept, by design. One shared code isn't a sign-in, and the per-page limit keys on an id the browser picks. docs/security.md says so and docs/deploy.md documents rotation. The old code keeps working for up to five minutes after a change because the backend caches it; in the test deploy it was refused within 50 seconds."
         },
         {
           "key": "custom:findings",
@@ -1537,7 +1537,7 @@
         },
         {
           "key": "custom:residual",
-          "value": "Bounded, not removed. Estimate from the README, not measured on a bill: about 0.60 US dollars a day in model charges if the cap of 200 questions is reached and every call uses its whole output allowance, at Claude Haiku 5.5's price on 2026-11-20. No test in the repository calls a real model. The test deploys made a handful of real calls and didn't push the token or call limits. The model can also decline a question under its provider's safety rules; the visitor then gets no pick and the question is still counted. AgentCore runtime time for each question isn't in the estimate."
+          "value": "Bounded, not removed. Estimate from docs/costs.md, not measured on a bill: about 0.60 US dollars a day in model charges if the cap of 200 questions is reached and every call uses its whole output allowance, at Claude Haiku 5.5's price on 2026-11-20. No test in the repository calls a real model. The test deploys made a handful of real calls and didn't push the token or call limits. The model can also decline a question under its provider's safety rules; the visitor then gets no pick and the question is still counted. AgentCore runtime time for each question isn't in the estimate."
         },
         {
           "key": "custom:findings",
@@ -1781,7 +1781,7 @@
         },
         {
           "key": "custom:residual",
-          "value": "A residual risk to accept. With the default CloudFront certificate the security policy is fixed at TLSv1, so the site accepts TLS 1.0 and later (cdk-nag CFR4); the README says so and the deploy prints a warning. Six buckets and the tables use keys AWS manages. Five buckets have no server access logging of their own; three of them are log buckets, and CloudFront logs requests for the site bucket."
+          "value": "A residual risk to accept. With the default CloudFront certificate the security policy is fixed at TLSv1, so the site accepts TLS 1.0 and later (cdk-nag CFR4); docs/security.md says so and the deploy prints a warning. Six buckets and the tables use keys AWS manages. Five buckets have no server access logging of their own; three of them are log buckets, and CloudFront logs requests for the site bucket."
         }
       ]
     },
@@ -1841,7 +1841,7 @@
         },
         {
           "key": "custom:residual",
-          "value": "A residual risk to accept. The Block's source is generator output, so the fix (record first, then mark stored) belongs in the generator. The README and the page no longer claim an entry for every write. The uploadedBy value is a label the app supplies, not an identity."
+          "value": "A residual risk to accept. The Block's source is generator output, so the fix (record first, then mark stored) belongs in the generator. The docs and the page no longer claim an entry for every write. The uploadedBy value is a label the app supplies, not an identity."
         },
         {
           "key": "custom:findings",
@@ -1905,7 +1905,7 @@
         },
         {
           "key": "custom:residual",
-          "value": "No advisory is ignored in the scanner settings. Version 4 listed one, minimatch 10.2.6 (CVE-2026-118764), bundled in aws-cdk-lib 2.277.0. aws-cdk-lib is now 2.278.0, whose bundled minimatch is 11.0.9, and the ignore entry is gone; npm audit reads 0 vulnerabilities. Two upgrades didn't wait out the 7-day cooldown that Dependabot applies: every CDK Blocks package moved to 1.0.0 on 2026-11-21, one day after those packages were published, and aws-cdk-lib moved to 2.278.0 on 2026-11-22, two days after its release. The CDK Blocks packages come from the aws/cdk-blocks repository under the names aws-cdk-blocks and @aws-cdk-blocks. Two direct dependencies were new in version 2: @aws-sdk/client-s3 3.1172.0, which the tree already held, and playwright 1.65.1 for the contrast test. The lockfile marks playwright devOptional, because bedrock-agentcore names it as an optional peer; the bundles a deploy uploads hold none of it. CI downloads a Chromium build with Playwright's installer. The CI workflow has never run."
+          "value": "No advisory is ignored in the scanner settings. Version 4 listed one, minimatch 10.2.6 (CVE-2026-118764), bundled in aws-cdk-lib 2.277.0. aws-cdk-lib is now 2.278.0, whose bundled minimatch is 11.0.9, and the ignore entry is gone; npm audit reads 0 vulnerabilities. Three upgrades didn't wait out the 7-day cooldown that Dependabot applies: every CDK Blocks package moved to 1.0.0 on 2026-11-21, one day after those packages were published; aws-cdk-lib moved to 2.278.0 on 2026-11-22, two days after its release; and aws-cdk-blocks and @aws-cdk-blocks/core moved to 1.0.1 on 2026-11-27, four days after their release. In @aws-cdk-blocks/core the only published runtime file that differs between 1.0.0 and 1.0.1 is the version string, and aws-cdk-blocks 1.0.1 adds a command line entry point that this sample doesn't call. The CDK Blocks packages come from the aws/cdk-blocks repository under the names aws-cdk-blocks and @aws-cdk-blocks. Two direct dependencies were new in version 2: @aws-sdk/client-s3 3.1172.0, which the tree already held, and playwright 1.65.1 for the contrast test. The lockfile marks playwright devOptional, because bedrock-agentcore names it as an optional peer; the bundles a deploy uploads hold none of it. CI downloads a Chromium build with Playwright's installer. The CI workflow has never run."
         }
       ]
     },
@@ -2057,7 +2057,7 @@
         },
         {
           "key": "custom:residual",
-          "value": "Covers the invite secret only. A Block that reads its address when the module loads, such as a table or a bucket, stays stale if a deploy replaces it; the README gives the restart command. The retry has run in tests only. The cause is in CDK Blocks' config loading and needs an upstream issue. The failure is closed: a copy that can't read the code refuses."
+          "value": "Covers the invite secret only. A Block that reads its address when the module loads, such as a table or a bucket, stays stale if a deploy replaces it; docs/deploy.md gives the restart command. The retry has run in tests only. The cause is in CDK Blocks' config loading and needs an upstream issue. The failure is closed: a copy that can't read the code refuses."
         }
       ]
     },
