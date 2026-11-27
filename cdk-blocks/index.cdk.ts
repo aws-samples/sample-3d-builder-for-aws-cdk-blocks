@@ -26,7 +26,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = new cdk.App();
 
-// The deployer's choices, from the environment (see deploy-options.ts and the README).
+// The deployer's choices, from the environment (see deploy-options.ts and docs/deploy.md).
 const options = readDeployOptions(process.env);
 
 // Tag every taggable resource in every stack of this app.
@@ -79,7 +79,7 @@ const hosting =
     : undefined;
 
 // The invite code's secret gets its name from the stack, so two deployments in one account don't
-// collide. This output is how you find it: see "The invite code" in the README.
+// collide. This output is how you find it: see "The invite code" in docs/deploy.md.
 // The stack holds a second secret, the one the Realtime Block signs its channel tokens with, so
 // the invite code's is picked by where it sits: under the Secret Block with the id `invite-code`.
 const inviteSecret = blocksStack.node

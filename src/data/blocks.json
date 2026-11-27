@@ -1,11 +1,11 @@
 {
-  "readAt": "2026-11-21",
-  "repoCommit": "92cf8fb",
+  "readAt": "2026-11-27",
+  "repoCommit": "16a1b00",
   "umbrella": {
     "name": "aws-cdk-blocks",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
-  "caseNote": "Each block alone on the \"backend\" template of create-blocks-app 1.0.0 with default options and the production preset (BlocksPresets.production, what npm run deploy synthesizes), counted as resources added to a no-blocks baseline.",
+  "caseNote": "Each block alone on the \"backend\" template of create-blocks-app 1.0.1 with default options and the production preset (BlocksPresets.production, what npm run deploy synthesizes), counted as resources added to a no-blocks baseline.",
   "blocks": [
     {
       "id": "kvstore",

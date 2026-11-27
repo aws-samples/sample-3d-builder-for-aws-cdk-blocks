@@ -127,7 +127,7 @@
     "Custom::S3AutoDeleteObjects": 7
   },
   "packages": {
-    "aws-cdk-blocks": "1.0.0",
+    "aws-cdk-blocks": "1.0.1",
     "aws-cdk-lib": "2.278.0"
   }
 }

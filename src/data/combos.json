@@ -1,5 +1,5 @@
 {
-  "readAt": "2026-11-21",
+  "readAt": "2026-11-27",
   "preset": "production",
   "keyFormat": "block ids joined with \"+\", always in this order: kvstore, database, auth, agent, realtime, hosting, housebucket",
   "baselineResources": 59,
@@ -3298,7 +3298,7 @@
   },
   "customPiece": {
     "id": "housebucket",
-    "note": "The 64 keys with housebucket are the custom Block with all four standards on (key, retention, logging, tags). custom.json has every standards key. Added by the custom Block synth run on 2026-11-21; the first 63 entries are unchanged.",
+    "note": "The 64 keys with housebucket are the custom Block with all four standards on (key, retention, logging, tags). custom.json has every standards key. Added by the custom Block synth run on 2026-11-27; the first 63 entries are unchanged.",
     "templates": "synth-runs/custom-block/synth/templates/custom/key+retention+logging+tags"
   }
 }

@@ -41614,9 +41614,9 @@
   "combos": "synth-runs/pieces/synth/combos.json",
   "packages": {
    "name": "aws-cdk-blocks",
-   "version": "1.0.0"
+   "version": "1.0.1"
   },
-  "readAt": "2026-11-21",
+  "readAt": "2026-11-27",
   "templates": "synth-runs/pieces/synth/templates"
  },
  "standardsKeys": [

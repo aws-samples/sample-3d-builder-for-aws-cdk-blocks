@@ -63,7 +63,7 @@
   },
   "dependencies": {
     "@aws-cdk-blocks/bb-agent": "1.0.0",
-    "aws-cdk-blocks": "1.0.0",
+    "aws-cdk-blocks": "1.0.1",
     "@aws-cdk-blocks/hosting": "1.0.0",
     "@fontsource/fredoka": "5.3.0",
     "@fontsource/jetbrains-mono": "5.3.0",

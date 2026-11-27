@@ -10,9 +10,9 @@
  * Run:  npm run test:backend
  */
 import assert from 'node:assert';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { ApiError, Scope } from 'aws-cdk-blocks';
 import { bump, type CounterStore, giveBack, isFull, takeSlot } from '../cdk-blocks/budget.js';
@@ -677,10 +677,72 @@ test('model: the agent runs Claude Haiku 5.5 through an inference profile, sends
   assert.ok(AGENT_MAX_TOKENS >= 800, `AGENT_MAX_TOKENS is ${AGENT_MAX_TOKENS}`);
   // No preset names the model for us: a preset can move to another model in an upgrade of @aws-cdk-blocks/bb-agent.
   assert.doesNotMatch(backend, /BedrockModels/);
-  // The README states the same id and the same cap.
+  // The README and the deploy page state the same id, and the cost page states the same cap.
+  assert.ok(readFileSync('README.md', 'utf8').includes(`\`${AGENT_MODEL_ID}\``));
+  assert.ok(readFileSync('docs/deploy.md', 'utf8').includes(`\`${AGENT_MODEL_ID}\``));
+  assert.ok(readFileSync('docs/costs.md', 'utf8').includes(`at most ${AGENT_MAX_TOKENS.toLocaleString('en-US')} output tokens`));
+});
+
+// ─── The README and the pages under docs/ ────────────────────────────────────
+
+/** The anchor GitHub gives a heading: lower case, punctuation dropped, spaces to hyphens. */
+const anchorOf = (heading: string) =>
+  heading
+    .toLowerCase()
+    .replace(/[^a-z0-9 _-]/g, '')
+    .replace(/ /g, '-');
+
+/** Every relative link and image in a Markdown file that points nowhere, as `file: target`. */
+function brokenLinks(file: string): string[] {
+  const text = readFileSync(file, 'utf8');
+  const targets = [...text.matchAll(/\]\(([^)\s]+)\)/g), ...text.matchAll(/(?:src|href)="([^"]+)"/g)].map((m) => m[1]);
+  const broken: string[] = [];
+  for (const target of targets) {
+    if (/^(https?:|mailto:)/.test(target)) continue;
+    const [path, anchor] = target.split('#');
+    const resolved = path === '' ? file : join(dirname(file), path);
+    if (!existsSync(resolved)) broken.push(`${file}: ${target}`);
+    else if (anchor !== undefined && resolved.endsWith('.md')) {
+      const anchors = [...readFileSync(resolved, 'utf8').matchAll(/^#+ (.+)$/gm)].map((m) => anchorOf(m[1]));
+      if (!anchors.includes(anchor)) broken.push(`${file}: ${target}`);
+    }
+  }
+  return broken;
+}
+
+test('docs: every relative link and image in the README and the docs pages points at a file and a heading that exist', () => {
+  const pages = [
+    'README.md',
+    'AGENTS.md',
+    ...readdirSync('docs')
+      .filter((name) => name.endsWith('.md'))
+      .map((name) => join('docs', name)),
+  ];
+  assert.ok(pages.length >= 7, 'the README, AGENTS.md and five pages under docs/');
+  assert.deepStrictEqual(pages.flatMap(brokenLinks), []);
+});
+
+test('docs: the README keeps the sections a sample needs, shows every picture with alt text, and stays a short page', () => {
   const readme = readFileSync('README.md', 'utf8');
-  assert.ok(readme.includes(`\`${AGENT_MODEL_ID}\``));
-  assert.ok(readme.includes(`at most ${AGENT_MAX_TOKENS.toLocaleString('en-US')} output tokens`));
+  for (const heading of [
+    '## Run it on your machine',
+    '## Deploy it to your own account',
+    '## Limits',
+    '## Security',
+    '## Contributing',
+    '## License',
+  ]) {
+    assert.ok(readme.includes(`\n${heading}\n`), `missing section: ${heading}`);
+  }
+  assert.ok(readme.includes('This is sample code, for non-production usage.'));
+  assert.ok(readme.includes('See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.'));
+  assert.ok(readme.includes('This library is licensed under the MIT-0 License.'));
+  for (const image of readme.matchAll(/!\[([^\]]*)\]\(|<img [^>]*>/g)) {
+    const alt = image[1] ?? /alt="([^"]*)"/.exec(image[0])?.[1] ?? '';
+    assert.ok(alt.length >= 20, `an image has no real alt text: ${image[0].slice(0, 60)}`);
+  }
+  // The README is the product page. Long reference belongs under docs/.
+  assert.ok(readme.split('\n').length <= 180, 'README.md has grown past 180 lines: move detail to docs/');
 });
 
 // ─── The custom Block's package ──────────────────────────────────────────────
